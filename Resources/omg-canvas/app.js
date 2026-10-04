@@ -33,7 +33,6 @@
     $('connection-error').hidden = !error;
     $('connection-error').querySelector('span').textContent = error ? errorMessage(error) : '';
     $('create-button').disabled = !!error || !state;
-    $('preview-button').disabled = !!error || !state;
     $('empty-create').disabled = !!error || !state;
   }
   function localize() {
