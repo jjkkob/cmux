@@ -181,8 +181,7 @@
     "memoryUnavailable": {
       "message": "このマシンサイズは現在利用できません。{max} GiB 以下を選択してください。",
       "action": "cmux vm new --size {max}g"
-    }
-  ,
+    },
     "goLimit": {
       "savedMessage": "Go では実行中の VM を含めて 2 台まで保存できます。",
       "savedAction": "cmux vm ls\ncmux vm rm <id>\ncmux billing checkout --plan pro",
@@ -192,7 +191,8 @@
       "hoursAction": "cmux billing checkout --plan pro",
       "shapeMessage": "Go は 2 vCPU、4 GiB RAM、16 GiB ディスクに対応しています。",
       "shapeAction": "cmux vm new --size 4g\ncmux billing checkout --plan pro"
-    }},
+    }
+  },
   "ios": {
     "metaTitle": "cmux iOS — iPhone と iPad でターミナルを",
     "metaDescription": "cmux iOS アプリは、Mac のターミナルを自分の Tailscale やローカルネットワーク経由で iPhone・iPad にリアルタイムでミラーリング。どこからでもコーディングエージェントを操作できます。",
@@ -5688,6 +5688,38 @@
       "sampleFile": "サンプルファイル",
       "jumpLatest": "最新の内容に移動",
       "composerHint": "Return キーで改行します。送信ボタンでプレビューメッセージを追加できます。"
+    },
+    "chat": {
+      "loading": "読み込み中…",
+      "readOnly": "読み取り専用",
+      "continueHint": "ここで続ける前に、この会話に書き込んでいる他のアプリを閉じてください。",
+      "continue": "ここで続ける",
+      "message": "メッセージ…",
+      "stop": "停止",
+      "send": "送信",
+      "allow": "許可",
+      "deny": "拒否",
+      "answer": "回答",
+      "submitAnswers": "回答を送信",
+      "cancel": "リクエストをキャンセル",
+      "back": "チャットに戻る",
+      "writerConflict": "この会話はすでに書き込み用に開いています。既存のチャットまたはターミナルを使ってください。",
+      "notConnected": "プロバイダーは要求された会話を開きませんでした。",
+      "identityMismatch": "プロバイダーが別の会話を返しました。開き直してから続けてください。",
+      "historyUnavailable": "元の会話がローカルで見つかりません。キャンバスの履歴は引き続き参照できます。",
+      "questionTitle": "Codex が回答を待っています",
+      "approvalTitle": "Codex が許可を求めています",
+      "codexExited": "Codex が切断されました。会話を開き直して続けてください。",
+      "closed": "会話が切断されました。開き直して続けてください。",
+      "notReady": "現在の応答が終わるまで待つか、保留中のリクエストに先に回答してください。",
+      "invalidResponse": "プロバイダーが読み取れない応答を返しました。",
+      "timeout": "プロバイダーが時間内に応答しませんでした。会話を開き直してから再試行してください。",
+      "inputTooLarge": "このメッセージは大きすぎるため送信できません。",
+      "leaseUnavailable": "編集用に会話をロックできませんでした。",
+      "ownedElsewhere": "この会話は別の OMG アプリですでに開いています。ここで続ける前に、そちらで閉じてください。",
+      "claudeQuestionTitle": "Claude が回答を待っています",
+      "claudeApprovalTitle": "Claude が許可を求めています",
+      "claudeHistoryUnavailable": "このプロジェクトで Claude の保存された会話を読み取れませんでした。"
     }
   }
 }

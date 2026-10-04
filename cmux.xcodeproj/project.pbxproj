@@ -2296,10 +2296,29 @@
 		8C3EE7C3494254D9137CAFB4 /* omg-canvas in Resources */ = {isa = PBXBuildFile; fileRef = 04E8619DEA79D377705711FF /* omg-canvas */; };
 		B79C546BDD410CCE29575E83 /* OMGCanvasBridgeRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6465B83FD30FE835525FF459 /* OMGCanvasBridgeRequest.swift */; };
 		65A55F6D2FC46BD8A7E379BB /* OMGCanvasBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711A07D616098139479AE4E8 /* OMGCanvasBridgeTests.swift */; };
-		3C4AF1B975B7053AF887B4DB /* OMGCanvasChatPreviewMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF63A678DA4920C3B30D30C9 /* OMGCanvasChatPreviewMessageView.swift */; };
-		DA61D906C78C35AD779EBE51 /* OMGCanvasChatPreviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5291A0AE04C2E40242620FB0 /* OMGCanvasChatPreviewModel.swift */; };
-		A1318FD59C5337DD1F96E43F /* OMGCanvasChatPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D700A1962975321FF6C344 /* OMGCanvasChatPreviewTests.swift */; };
-		C3115D4F30F9BBC627C242EE /* OMGCanvasChatPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1046D57C1116B1BC0E0B1D77 /* OMGCanvasChatPreviewView.swift */; };
+		B59BA39F6901AFAC98C2294C /* OMGCanvasChatActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 487358F148046A62528915AB /* OMGCanvasChatActivity.swift */; };
+		9B3E1CCC1FEEDE6CD599B259 /* OMGCanvasChatEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81637E4329F6D5A7B6D1220B /* OMGCanvasChatEvent.swift */; };
+		15F6D51AC4F304A61C3421A8 /* OMGCanvasChatIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42C02861B44A72047E52519 /* OMGCanvasChatIdentity.swift */; };
+		647108EBED3F5EBBA6149B23 /* OMGCanvasChatInputWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 466551DF9D3DFAA531A58B22 /* OMGCanvasChatInputWriter.swift */; };
+		85E581704EB8F3B2FC753EC4 /* OMGCanvasChatLease.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86300FA18E0AD6696D444E4 /* OMGCanvasChatLease.swift */; };
+		02CD47521FF59F8718A5059B /* OMGCanvasChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E586D0DD6C1481DD0F3F9A52 /* OMGCanvasChatMessage.swift */; };
+		3C4AF1B975B7053AF887B4DB /* OMGCanvasChatMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF63A678DA4920C3B30D30C9 /* OMGCanvasChatMessageView.swift */; };
+		DA61D906C78C35AD779EBE51 /* OMGCanvasChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5291A0AE04C2E40242620FB0 /* OMGCanvasChatModel.swift */; };
+		A8A11B89B603A9B8C4BC30A8 /* OMGCanvasChatOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A92E53CFD79CA58A490094 /* OMGCanvasChatOwnership.swift */; };
+		F365938B48F4D0CB25DE2930 /* OMGCanvasChatPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AC36E0793CBFC981D2F49A /* OMGCanvasChatPrompt.swift */; };
+		784E6074C1B3385020234745 /* OMGCanvasChatPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ACE7007549E6BCA34DF1BBF /* OMGCanvasChatPromptView.swift */; };
+		F027D94DA36EF14F408B61FA /* OMGCanvasChatProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F28340F8C03451072BEE47F /* OMGCanvasChatProvider.swift */; };
+		A90944E85C18D0563ECF08F6 /* OMGCanvasChatResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC35D09CD94A00A9DA322BF5 /* OMGCanvasChatResponse.swift */; };
+		91D56EBEE1F296E29139D7E6 /* OMGCanvasChatRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C338FE26926629D8D895CD /* OMGCanvasChatRuntime.swift */; };
+		B68F421A4C24D770C9706451 /* OMGCanvasChatStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A4E018C882F73979C0F6A1 /* OMGCanvasChatStatus.swift */; };
+		A1318FD59C5337DD1F96E43F /* OMGCanvasChatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D700A1962975321FF6C344 /* OMGCanvasChatTests.swift */; };
+		C3115D4F30F9BBC627C242EE /* OMGCanvasChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1046D57C1116B1BC0E0B1D77 /* OMGCanvasChatView.swift */; };
+		6ED1FF691DCA94DBBC363531 /* OMGCanvasClaudeHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292E548EE4A74236E7E362F3 /* OMGCanvasClaudeHistory.swift */; };
+		2F5C0F54BE880E52DD66EBCE /* OMGCanvasClaudeRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6619782DC8A1ACE3D3769711 /* OMGCanvasClaudeRuntime.swift */; };
+		F368FAB91AC8115779AD7D6B /* OMGCanvasClaudeRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14B63112FF366FFB607271B /* OMGCanvasClaudeRuntimeTests.swift */; };
+		6E3870C59B42E2898C097921 /* OMGCanvasClaudeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC3091852F49580B799B6ED /* OMGCanvasClaudeTransport.swift */; };
+		2907DF73F5F2DB26633E8936 /* OMGCanvasCodexRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82967DC40839306C1DD631D /* OMGCanvasCodexRuntime.swift */; };
+		BFD2B68021AD8924794B5052 /* OMGCanvasCodexRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12A53B93BA15CE6E7F169CC /* OMGCanvasCodexRuntimeTests.swift */; };
 		54399EF29435C50B1A05E847 /* OMGCanvasCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D83389464F18D0140EF774D /* OMGCanvasCoordinator.swift */; };
 		BEA56A8F861A85025EA1A21B /* OMGCanvasGraph+History.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D43C66C9B7E4062F5F8932 /* OMGCanvasGraph+History.swift */; };
 		5287A07E38053FA45762511A /* OMGCanvasGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7532042AFCD02B078CDBCFC3 /* OMGCanvasGraph.swift */; };
@@ -6140,10 +6159,29 @@
 		04E8619DEA79D377705711FF /* omg-canvas */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "omg-canvas"; sourceTree = "<group>"; };
 		6465B83FD30FE835525FF459 /* OMGCanvasBridgeRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasBridgeRequest.swift"; sourceTree = "<group>"; };
 		711A07D616098139479AE4E8 /* OMGCanvasBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasBridgeTests.swift; sourceTree = "<group>"; };
-		DF63A678DA4920C3B30D30C9 /* OMGCanvasChatPreviewMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatPreviewMessageView.swift; sourceTree = "<group>"; };
-		5291A0AE04C2E40242620FB0 /* OMGCanvasChatPreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatPreviewModel.swift; sourceTree = "<group>"; };
-		60D700A1962975321FF6C344 /* OMGCanvasChatPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatPreviewTests.swift; sourceTree = "<group>"; };
-		1046D57C1116B1BC0E0B1D77 /* OMGCanvasChatPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatPreviewView.swift; sourceTree = "<group>"; };
+		487358F148046A62528915AB /* OMGCanvasChatActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatActivity.swift; sourceTree = "<group>"; };
+		81637E4329F6D5A7B6D1220B /* OMGCanvasChatEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatEvent.swift; sourceTree = "<group>"; };
+		D42C02861B44A72047E52519 /* OMGCanvasChatIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatIdentity.swift; sourceTree = "<group>"; };
+		466551DF9D3DFAA531A58B22 /* OMGCanvasChatInputWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatInputWriter.swift; sourceTree = "<group>"; };
+		F86300FA18E0AD6696D444E4 /* OMGCanvasChatLease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatLease.swift; sourceTree = "<group>"; };
+		E586D0DD6C1481DD0F3F9A52 /* OMGCanvasChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatMessage.swift; sourceTree = "<group>"; };
+		DF63A678DA4920C3B30D30C9 /* OMGCanvasChatMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatMessageView.swift; sourceTree = "<group>"; };
+		5291A0AE04C2E40242620FB0 /* OMGCanvasChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatModel.swift; sourceTree = "<group>"; };
+		64A92E53CFD79CA58A490094 /* OMGCanvasChatOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatOwnership.swift; sourceTree = "<group>"; };
+		56AC36E0793CBFC981D2F49A /* OMGCanvasChatPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatPrompt.swift; sourceTree = "<group>"; };
+		6ACE7007549E6BCA34DF1BBF /* OMGCanvasChatPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatPromptView.swift; sourceTree = "<group>"; };
+		3F28340F8C03451072BEE47F /* OMGCanvasChatProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatProvider.swift; sourceTree = "<group>"; };
+		BC35D09CD94A00A9DA322BF5 /* OMGCanvasChatResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatResponse.swift; sourceTree = "<group>"; };
+		C6C338FE26926629D8D895CD /* OMGCanvasChatRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatRuntime.swift; sourceTree = "<group>"; };
+		04A4E018C882F73979C0F6A1 /* OMGCanvasChatStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatStatus.swift; sourceTree = "<group>"; };
+		60D700A1962975321FF6C344 /* OMGCanvasChatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatTests.swift; sourceTree = "<group>"; };
+		1046D57C1116B1BC0E0B1D77 /* OMGCanvasChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasChatView.swift; sourceTree = "<group>"; };
+		292E548EE4A74236E7E362F3 /* OMGCanvasClaudeHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasClaudeHistory.swift; sourceTree = "<group>"; };
+		6619782DC8A1ACE3D3769711 /* OMGCanvasClaudeRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasClaudeRuntime.swift; sourceTree = "<group>"; };
+		C14B63112FF366FFB607271B /* OMGCanvasClaudeRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasClaudeRuntimeTests.swift; sourceTree = "<group>"; };
+		8BC3091852F49580B799B6ED /* OMGCanvasClaudeTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasClaudeTransport.swift; sourceTree = "<group>"; };
+		A82967DC40839306C1DD631D /* OMGCanvasCodexRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasCodexRuntime.swift; sourceTree = "<group>"; };
+		C12A53B93BA15CE6E7F169CC /* OMGCanvasCodexRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasCodexRuntimeTests.swift; sourceTree = "<group>"; };
 		5D83389464F18D0140EF774D /* OMGCanvasCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasCoordinator.swift"; sourceTree = "<group>"; };
 		E9D43C66C9B7E4062F5F8932 /* OMGCanvasGraph+History.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasGraph+History.swift"; sourceTree = "<group>"; };
 		7532042AFCD02B078CDBCFC3 /* OMGCanvasGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasGraph.swift"; sourceTree = "<group>"; };
@@ -10643,7 +10681,9 @@
 			isa = PBXGroup;
 			children = (
 				711A07D616098139479AE4E8 /* OMGCanvasBridgeTests.swift */,
-				60D700A1962975321FF6C344 /* OMGCanvasChatPreviewTests.swift */,
+				C12A53B93BA15CE6E7F169CC /* OMGCanvasCodexRuntimeTests.swift */,
+				C14B63112FF366FFB607271B /* OMGCanvasClaudeRuntimeTests.swift */,
+				60D700A1962975321FF6C344 /* OMGCanvasChatTests.swift */,
 				98B64A4C8DA2F6FFEB24E094 /* OMGCanvasHistoryTests.swift */,
 				B6F143F6E02543F3899F1E01 /* CodexAutoresumeChainTests.swift */,
 				A54730000000000000000001 /* AntigravityHookSessionSnapshotRestoreTests.swift */,
@@ -11740,9 +11780,26 @@
 				E9D43C66C9B7E4062F5F8932 /* OMGCanvasGraph+History.swift */,
 				180844A9D0FB2A3FF8044A27 /* OMGCanvasHistoryManifest.swift */,
 				C62E406E86C95DD753412DC5 /* OMGCanvasHostView.swift */,
-				DF63A678DA4920C3B30D30C9 /* OMGCanvasChatPreviewMessageView.swift */,
-				1046D57C1116B1BC0E0B1D77 /* OMGCanvasChatPreviewView.swift */,
-				5291A0AE04C2E40242620FB0 /* OMGCanvasChatPreviewModel.swift */,
+				DF63A678DA4920C3B30D30C9 /* OMGCanvasChatMessageView.swift */,
+				1046D57C1116B1BC0E0B1D77 /* OMGCanvasChatView.swift */,
+				C6C338FE26926629D8D895CD /* OMGCanvasChatRuntime.swift */,
+				3F28340F8C03451072BEE47F /* OMGCanvasChatProvider.swift */,
+				D42C02861B44A72047E52519 /* OMGCanvasChatIdentity.swift */,
+				E586D0DD6C1481DD0F3F9A52 /* OMGCanvasChatMessage.swift */,
+				487358F148046A62528915AB /* OMGCanvasChatActivity.swift */,
+				56AC36E0793CBFC981D2F49A /* OMGCanvasChatPrompt.swift */,
+				BC35D09CD94A00A9DA322BF5 /* OMGCanvasChatResponse.swift */,
+				04A4E018C882F73979C0F6A1 /* OMGCanvasChatStatus.swift */,
+				81637E4329F6D5A7B6D1220B /* OMGCanvasChatEvent.swift */,
+				F86300FA18E0AD6696D444E4 /* OMGCanvasChatLease.swift */,
+				466551DF9D3DFAA531A58B22 /* OMGCanvasChatInputWriter.swift */,
+				A82967DC40839306C1DD631D /* OMGCanvasCodexRuntime.swift */,
+				6619782DC8A1ACE3D3769711 /* OMGCanvasClaudeRuntime.swift */,
+				8BC3091852F49580B799B6ED /* OMGCanvasClaudeTransport.swift */,
+				292E548EE4A74236E7E362F3 /* OMGCanvasClaudeHistory.swift */,
+				64A92E53CFD79CA58A490094 /* OMGCanvasChatOwnership.swift */,
+				6ACE7007549E6BCA34DF1BBF /* OMGCanvasChatPromptView.swift */,
+				5291A0AE04C2E40242620FB0 /* OMGCanvasChatModel.swift */,
 				A722EF1D1187E8E8508590C7 /* OMGCanvasRuntimeResolver.swift */,
 				6B21D674A415CBF49178B8CC /* OMGCanvasSnapshot.swift */,
 				56A40DEEE9AE0202B78CC367 /* OMGCanvasState.swift */,
@@ -13682,9 +13739,26 @@
 				D36090020000000000000001 /* NSWindow+CmuxPeerWindow.swift in Sources */,
 				7A0CE1000000000000000714 /* NWConnection+Async.swift in Sources */,
 				B79C546BDD410CCE29575E83 /* OMGCanvasBridgeRequest.swift in Sources */,
-				3C4AF1B975B7053AF887B4DB /* OMGCanvasChatPreviewMessageView.swift in Sources */,
-				DA61D906C78C35AD779EBE51 /* OMGCanvasChatPreviewModel.swift in Sources */,
-				C3115D4F30F9BBC627C242EE /* OMGCanvasChatPreviewView.swift in Sources */,
+				B59BA39F6901AFAC98C2294C /* OMGCanvasChatActivity.swift in Sources */,
+				9B3E1CCC1FEEDE6CD599B259 /* OMGCanvasChatEvent.swift in Sources */,
+				15F6D51AC4F304A61C3421A8 /* OMGCanvasChatIdentity.swift in Sources */,
+				647108EBED3F5EBBA6149B23 /* OMGCanvasChatInputWriter.swift in Sources */,
+				85E581704EB8F3B2FC753EC4 /* OMGCanvasChatLease.swift in Sources */,
+				02CD47521FF59F8718A5059B /* OMGCanvasChatMessage.swift in Sources */,
+				3C4AF1B975B7053AF887B4DB /* OMGCanvasChatMessageView.swift in Sources */,
+				DA61D906C78C35AD779EBE51 /* OMGCanvasChatModel.swift in Sources */,
+				A8A11B89B603A9B8C4BC30A8 /* OMGCanvasChatOwnership.swift in Sources */,
+				F365938B48F4D0CB25DE2930 /* OMGCanvasChatPrompt.swift in Sources */,
+				784E6074C1B3385020234745 /* OMGCanvasChatPromptView.swift in Sources */,
+				F027D94DA36EF14F408B61FA /* OMGCanvasChatProvider.swift in Sources */,
+				A90944E85C18D0563ECF08F6 /* OMGCanvasChatResponse.swift in Sources */,
+				91D56EBEE1F296E29139D7E6 /* OMGCanvasChatRuntime.swift in Sources */,
+				B68F421A4C24D770C9706451 /* OMGCanvasChatStatus.swift in Sources */,
+				C3115D4F30F9BBC627C242EE /* OMGCanvasChatView.swift in Sources */,
+				6ED1FF691DCA94DBBC363531 /* OMGCanvasClaudeHistory.swift in Sources */,
+				2F5C0F54BE880E52DD66EBCE /* OMGCanvasClaudeRuntime.swift in Sources */,
+				6E3870C59B42E2898C097921 /* OMGCanvasClaudeTransport.swift in Sources */,
+				2907DF73F5F2DB26633E8936 /* OMGCanvasCodexRuntime.swift in Sources */,
 				54399EF29435C50B1A05E847 /* OMGCanvasCoordinator.swift in Sources */,
 				BEA56A8F861A85025EA1A21B /* OMGCanvasGraph+History.swift in Sources */,
 				5287A07E38053FA45762511A /* OMGCanvasGraph.swift in Sources */,
@@ -15689,7 +15763,9 @@
 				645645000000000000000002 /* NumberedShortcutSwapTests.swift in Sources */,
 				0A1107110000000000000001 /* OllamaAgentDetectionTests.swift in Sources */,
 				65A55F6D2FC46BD8A7E379BB /* OMGCanvasBridgeTests.swift in Sources */,
-				A1318FD59C5337DD1F96E43F /* OMGCanvasChatPreviewTests.swift in Sources */,
+				A1318FD59C5337DD1F96E43F /* OMGCanvasChatTests.swift in Sources */,
+				F368FAB91AC8115779AD7D6B /* OMGCanvasClaudeRuntimeTests.swift in Sources */,
+				BFD2B68021AD8924794B5052 /* OMGCanvasCodexRuntimeTests.swift in Sources */,
 				061C72ABB2556830F2F791DA /* OMGCanvasHistoryTests.swift in Sources */,
 				4378399A7C0245EF8186F306 /* OmnibarAndToolsTests.swift in Sources */,
 				9637C6D3170F4BE1A7EF6243 /* OmnibarSubmitDecisionTests.swift in Sources */,

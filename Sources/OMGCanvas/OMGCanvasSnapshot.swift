@@ -15,6 +15,8 @@ struct OMGCanvasSnapshot: Codable {
         var available: Bool?
         var history: OMGCanvasGraph.History? = nil
         var canResume: Bool? = nil
+        var conversation: OMGCanvasGraph.Conversation? = nil
+        var chatStatus: String? = nil
     }
     var version = 1
     var revision: Int
@@ -26,9 +28,9 @@ struct OMGCanvasSnapshot: Codable {
     var terminalOpen: Bool
     var viewport: OMGCanvasGraph.Viewport
     var runtimes: [Runtime]
-    var previewOpen = false
+    var chatOpen = false
 
-    init(revision: Int, locale: String, workspace: WorkspaceInfo, nodes: [Node], edges: [OMGCanvasGraph.Edge], selectedId: UUID?, terminalOpen: Bool, viewport: OMGCanvasGraph.Viewport, runtimes: [Runtime], previewOpen: Bool = false) {
+    init(revision: Int, locale: String, workspace: WorkspaceInfo, nodes: [Node], edges: [OMGCanvasGraph.Edge], selectedId: UUID?, terminalOpen: Bool, viewport: OMGCanvasGraph.Viewport, runtimes: [Runtime], chatOpen: Bool = false) {
         self.revision = revision
         self.locale = locale
         self.workspace = workspace
@@ -38,11 +40,11 @@ struct OMGCanvasSnapshot: Codable {
         self.terminalOpen = terminalOpen
         self.viewport = viewport
         self.runtimes = runtimes
-        self.previewOpen = previewOpen
+        self.chatOpen = chatOpen
     }
 
     private enum CodingKeys: String, CodingKey {
-        case version, revision, locale, workspace, nodes, edges, selectedId, terminalOpen, viewport, runtimes, previewOpen
+        case version, revision, locale, workspace, nodes, edges, selectedId, terminalOpen, viewport, runtimes, chatOpen
     }
 
     init(from decoder: any Decoder) throws {
@@ -57,7 +59,7 @@ struct OMGCanvasSnapshot: Codable {
         terminalOpen = try values.decode(Bool.self, forKey: .terminalOpen)
         viewport = try values.decode(OMGCanvasGraph.Viewport.self, forKey: .viewport)
         runtimes = try values.decode([Runtime].self, forKey: .runtimes)
-        previewOpen = try values.decodeIfPresent(Bool.self, forKey: .previewOpen) ?? false
+        chatOpen = try values.decodeIfPresent(Bool.self, forKey: .chatOpen) ?? false
     }
 
     func dictionary() throws -> [String: Any] {

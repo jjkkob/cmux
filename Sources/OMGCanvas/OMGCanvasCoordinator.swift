@@ -19,7 +19,8 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
     private var historyIdentity: [String] = []
     private var historyLoad: Task<Void, Never>?
     private var runtimeLaunches: [String: OMGCanvasRuntimeResolver.Launch] = [:]
-    private var previewTerminalTarget: (nodeID: UUID, surfaceID: UUID)?
+    private var creatingRequests: Set<UUID> = []
+    private var chatTerminalTarget: (nodeID: UUID, surfaceID: UUID)?
 
     init(workspace: Workspace, resourceURL: URL?) {
         self.workspace = workspace
@@ -76,7 +77,7 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         if let surface = state.presentedSurfaceId, workspace.panels[surface] as? TerminalPanel == nil {
             dismiss()
         }
-        host?.updatePreviewTerminalAvailability(previewTerminalIsAvailable)
+        host?.updateChatTerminalAvailability(chatTerminalIsAvailable)
         refreshHistoryAvailability()
     }
 
@@ -99,41 +100,34 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         }
         do {
             let request = try OMGCanvasBridgeRequest(body: message.body)
-            if request.method == .resume {
-                Task { @MainActor in
-                    do {
-                        guard let id = request.params.id else { throw OMGCanvasBridgeRequest.Failure.invalid }
-                        try await resumeHistory(id)
-                        replyHandler(["ok": true, "value": snapshot()], nil)
-                        push()
-                    } catch {
-                        replyHandler(errorReply(error as? OMGCanvasBridgeRequest.Failure ?? .historyUnavailable), nil)
-                    }
+            Task { @MainActor in
+                do {
+                    let value = try await handle(request)
+                    replyHandler(["ok": true, "value": value], nil)
+                    push()
+                } catch {
+                    if let failure = error as? OMGCanvasBridgeRequest.Failure { replyHandler(errorReply(failure), nil) }
+                    else { replyHandler(["ok": false, "error": ["code": "chat_failed", "message": error.localizedDescription]], nil) }
                 }
-            } else {
-                let value = try handle(request)
-                replyHandler(["ok": true, "value": value], nil)
-                push()
             }
-        } catch {
-            replyHandler(errorReply(error as? OMGCanvasBridgeRequest.Failure ?? .invalid), nil)
-        }
+        } catch { replyHandler(errorReply(.invalid), nil) }
     }
 
     /// Synchronous main-actor mutations prevent create requests from interleaving.
-    private func handle(_ request: OMGCanvasBridgeRequest) throws -> [String: Any] {
+    private func handle(_ request: OMGCanvasBridgeRequest) async throws -> [String: Any] {
         guard active, let workspace, workspace.omgCanvasState.enabled else { throw OMGCanvasBridgeRequest.Failure.inactive }
         let state = workspace.omgCanvasState
         switch request.method {
         case .snapshot:
             reconcile()
         case .resume:
-            throw OMGCanvasBridgeRequest.Failure.invalid
+            guard let id = request.params.id else { throw OMGCanvasBridgeRequest.Failure.invalid }
+            try await resumeHistory(id)
         case .open:
             guard let id = request.params.id else { throw OMGCanvasBridgeRequest.Failure.invalid }
-            try open(id)
-        case .preview:
-            try openPreview(request.params.id)
+            if let node = state.graph.nodes.first(where: { $0.id == id }), OMGCanvasChatProvider(rawValue: node.runtime) != nil {
+                try await openChat(id)
+            } else { try open(id) }
         case .dismiss:
             dismiss()
         case .create:
@@ -143,7 +137,11 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
             guard !title.isEmpty, title.count <= 120, ["shell", "python", "codex", "claude"].contains(runtime) else { throw OMGCanvasBridgeRequest.Failure.invalid }
             if let prior = state.graph.nodes.first(where: { $0.requestId == request.id }) {
                 guard prior.title == title, prior.runtime == runtime else { throw OMGCanvasBridgeRequest.Failure.invalid }
+                if prior.conversation != nil { try await openChat(prior.id) }
                 return ["snapshot": snapshot(), "nodeId": prior.id.uuidString]
+            }
+            if let provider = OMGCanvasChatProvider(rawValue: runtime) {
+                return try await createChat(provider: provider, title: title, requestID: request.id)
             }
             guard let launch = runtimeLaunches[runtime] else { throw OMGCanvasBridgeRequest.Failure.missingRuntime }
             guard let pane = workspace.bonsplitController.allPaneIds.first,
@@ -236,29 +234,128 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         try open(id)
     }
 
-    private var previewTerminalIsAvailable: Bool {
-        guard let workspace, let target = previewTerminalTarget else { return false }
+    private var chatTerminalIsAvailable: Bool {
+        guard let workspace, let target = chatTerminalTarget else { return false }
         return workspace.omgCanvasState.graph.nodes.contains(where: { $0.id == target.nodeID && $0.surfaceId == target.surfaceID })
             && workspace.panels[target.surfaceID] is TerminalPanel
     }
 
-    private func openPreview(_ id: UUID?) throws {
-        guard active, let workspace, let host, workspace.omgCanvasState.enabled else { throw OMGCanvasBridgeRequest.Failure.inactive }
-        let node = id.flatMap { id in workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }) }
-        guard id == nil || node != nil else { throw OMGCanvasBridgeRequest.Failure.invalid }
-        dismiss(focusCanvas: false)
-        let model = try workspace.omgCanvasState.presentChatPreview(nodeID: id)
-        if let node, let surfaceID = node.surfaceId, workspace.panels[surfaceID] is TerminalPanel {
-            previewTerminalTarget = (node.id, surfaceID)
+    private func runtime(provider: OMGCanvasChatProvider, entry: SessionEntry? = nil) throws -> any OMGCanvasChatRuntime {
+        let resolver = AgentExecutableResolver(configuredExecutablePaths: AgentExecutableResolver.cmuxConfiguredExecutablePaths())
+        let launch = try resolver.resolve(provider == .codex ? .codex : .claude)
+        var environment = launch.environment
+        if let entry, case .claude(_, _, let configDirectory) = entry.specifics, let configDirectory, !configDirectory.isEmpty {
+            environment["CLAUDE_CONFIG_DIR"] = configDirectory
         }
-        host.presentPreview(model: model, title: node?.title ?? String(localized: "omg.chatPreview.chatPreview", defaultValue: "Chat preview"), runtime: node?.runtime, canOpenTerminal: previewTerminalIsAvailable) { [weak self] in
-            guard let self, self.previewTerminalIsAvailable, let target = self.previewTerminalTarget else { return }
-            try? self.open(target.nodeID, expectedSurfaceID: target.surfaceID, returnToPreview: true)
-            self.push()
+        if provider == .codex { return OMGCanvasCodexRuntime(executableURL: launch.executableURL, environment: environment) }
+        return OMGCanvasClaudeRuntime(executableURL: launch.executableURL, environment: environment)
+    }
+
+    private func referenceNode(_ node: OMGCanvasGraph.Node) -> OMGCanvasGraph.Node {
+        var reference = node
+        if reference.history == nil, let conversation = node.conversation {
+            reference.history = .init(source: conversation.provider, sessionId: conversation.sessionID, cwd: conversation.cwd)
+        }
+        return reference
+    }
+
+    private func wire(_ model: OMGCanvasChatModel, nodeID: UUID) {
+        model.onChange = { [weak self, weak workspace] in workspace?.omgCanvasState.changed(); self?.push() }
+        model.onIdentity = { [weak workspace] identity in
+            guard let state = workspace?.omgCanvasState,
+                  let index = state.graph.nodes.firstIndex(where: { $0.id == nodeID }) else { return }
+            state.graph.nodes[index].conversation = .init(provider: identity.provider.rawValue, sessionID: identity.sessionID, cwd: identity.cwd)
+            state.changed()
         }
     }
 
-    private func open(_ id: UUID, expectedSurfaceID: UUID? = nil, returnToPreview: Bool = false) throws {
+    private func createChat(provider: OMGCanvasChatProvider, title: String, requestID: UUID) async throws -> [String: Any] {
+        guard let workspace, let ownership = AppDelegate.shared?.omgCanvasChatOwnership,
+              creatingRequests.insert(requestID).inserted else { throw OMGCanvasBridgeRequest.Failure.createFailed }
+        defer { creatingRequests.remove(requestID) }
+        let model = OMGCanvasChatModel(provider: provider, title: title, runtime: try runtime(provider: provider), ownership: ownership)
+        // Native identity is assigned by the provider; only then does the standalone node exist.
+        model.onIdentity = { [weak workspace, weak model] identity in
+            guard let state = workspace?.omgCanvasState, let model else { return }
+            let id = state.addChat(conversation: .init(provider: identity.provider.rawValue, sessionID: identity.sessionID, cwd: identity.cwd), title: title, requestID: requestID)
+            state.chatModels[id] = model
+        }
+        try await model.connect(sessionID: nil, cwd: workspace.currentDirectory)
+        guard let node = workspace.omgCanvasState.graph.nodes.first(where: { $0.requestId == requestID }) else { throw OMGCanvasBridgeRequest.Failure.createFailed }
+        wire(model, nodeID: node.id)
+        try await openChat(node.id)
+        return ["snapshot": snapshot(), "nodeId": node.id.uuidString]
+    }
+
+    private func openChat(_ id: UUID) async throws {
+        guard active, !disposed, let workspace, let host, workspace.omgCanvasState.enabled,
+              let node = workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }),
+              let provider = OMGCanvasChatProvider(rawValue: node.runtime),
+              let ownership = AppDelegate.shared?.omgCanvasChatOwnership else { throw OMGCanvasBridgeRequest.Failure.invalid }
+        let state = workspace.omgCanvasState
+        let model: OMGCanvasChatModel
+        var needsHistory = false
+        var entry: SessionEntry?
+        if let cached = state.chatModels[id] { model = cached }
+        else {
+            let matches = await historyResolver.resolve([referenceNode(node)])
+            guard active, !disposed else { throw OMGCanvasBridgeRequest.Failure.inactive }
+            entry = matches[id]
+            var resolvedRuntime: (any OMGCanvasChatRuntime)?
+            var runtimeError: String?
+            do { resolvedRuntime = try runtime(provider: provider, entry: entry) }
+            catch { runtimeError = error.localizedDescription }
+            model = OMGCanvasChatModel(provider: provider, title: node.title, runtime: resolvedRuntime, ownership: ownership)
+            model.error = runtimeError
+            let canIdentify = entry != nil || node.conversation != nil
+            let liveTarget = entry.flatMap { entry in workspace.owningTabManager.flatMap { SessionEntryResumeCoordinator.activeTarget(for: entry, tabManager: $0) } }
+            let hasTerminal = node.surfaceId.flatMap { workspace.panels[$0] as? TerminalPanel } != nil
+            model.canContinue = canIdentify && liveTarget == nil && !hasTerminal && resolvedRuntime != nil
+            if liveTarget != nil || hasTerminal {
+                model.readOnlyReason = String(localized: "omg.chat.writerConflict", defaultValue: "This conversation is already open for writing. Use its existing chat or terminal.")
+            } else if !canIdentify {
+                model.readOnlyReason = String(localized: "omg.chat.historyUnavailable", defaultValue: "The original conversation could not be found locally. Its canvas history remains available.")
+            }
+            state.chatModels[id] = model
+            wire(model, nodeID: id)
+            needsHistory = canIdentify
+        }
+        dismiss(focusCanvas: false)
+        try state.presentChat(nodeID: id)
+        if let surfaceID = node.surfaceId, workspace.panels[surfaceID] is TerminalPanel { chatTerminalTarget = (id, surfaceID) }
+        host.presentChat(model: model, canOpenTerminal: chatTerminalIsAvailable, onContinue: { [weak self, weak model] in
+            Task { @MainActor in
+                do { try await self?.continueChat(id) }
+                catch { model?.error = error.localizedDescription }
+            }
+        }, onOpenTerminal: { [weak self] in
+            guard let self, self.chatTerminalIsAvailable, let target = self.chatTerminalTarget else { return }
+            try? self.open(target.nodeID, expectedSurfaceID: target.surfaceID, returnToChat: true)
+            self.push()
+        })
+        push()
+        if needsHistory {
+            let sessionID = node.conversation?.sessionID ?? entry?.sessionId
+            let cwd = node.conversation?.cwd ?? entry?.resumeWorkingDirectory ?? workspace.currentDirectory
+            if let sessionID { await model.loadHistory(sessionID: sessionID, cwd: cwd) }
+        }
+    }
+
+    private func continueChat(_ id: UUID) async throws {
+        guard active, !disposed, let workspace,
+              let node = workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }),
+              let model = workspace.omgCanvasState.chatModels[id], model.canContinue else { throw OMGCanvasBridgeRequest.Failure.historyUnavailable }
+        let entry = await historyResolver.resolve([referenceNode(node)])[id]
+        guard active, !disposed else { throw OMGCanvasBridgeRequest.Failure.inactive }
+        if let entry, let manager = workspace.owningTabManager, SessionEntryResumeCoordinator.activeTarget(for: entry, tabManager: manager) != nil {
+            model.canContinue = false
+            throw OMGCanvasChatModel.Failure.writerConflict
+        }
+        guard let sessionID = node.conversation?.sessionID ?? entry?.sessionId else { throw OMGCanvasBridgeRequest.Failure.historyUnavailable }
+        try await model.connect(sessionID: sessionID, cwd: node.conversation?.cwd ?? entry?.resumeWorkingDirectory ?? workspace.currentDirectory)
+    }
+
+    private func open(_ id: UUID, expectedSurfaceID: UUID? = nil, returnToChat: Bool = false) throws {
         guard active, let workspace, let host,
               let node = workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }),
               let surfaceId = node.surfaceId, let panel = workspace.panels[surfaceId] as? TerminalPanel else { throw OMGCanvasBridgeRequest.Failure.unavailable }
@@ -270,18 +367,18 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         state.changed()
         AppDelegate.shared?.noteMainPanelKeyboardFocusIntent(workspaceId: workspace.id, panelId: surfaceId, in: host.window)
         workspace.focusPanel(surfaceId)
-        let back: (() -> Void)? = returnToPreview ? { [weak self] in
-            try? self?.openPreview(id)
+        let back: (() -> Void)? = returnToChat ? { [weak self] in
+            Task { @MainActor in try? await self?.openChat(id) }
             self?.push()
         } : nil
-        host.present(panel, title: node.title, onBackToPreview: back) { [weak workspace] panelId in workspace?.focusPanel(panelId) }
+        host.present(panel, title: node.title, onBackToChat: back) { [weak workspace] panelId in workspace?.focusPanel(panelId) }
     }
 
     private func dismiss(focusCanvas: Bool = true) {
         guard let workspace else { return }
         host?.dismiss(focusCanvas: focusCanvas && active)
-        previewTerminalTarget = nil
-        workspace.omgCanvasState.dismissChatPreview()
+        chatTerminalTarget = nil
+        workspace.omgCanvasState.dismissChat()
         if workspace.omgCanvasState.presentedSurfaceId != nil {
             workspace.omgCanvasState.presentedSurfaceId = nil
             workspace.omgCanvasState.changed()
@@ -293,14 +390,14 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         guard let workspace else { return [:] }
         let state = workspace.omgCanvasState
         let nodes = state.graph.nodes.map { node in
-            OMGCanvasSnapshot.Node(id: node.id, surfaceId: node.surfaceId, title: node.title, runtime: node.runtime, createdAt: node.createdAt, x: node.x, y: node.y, available: node.surfaceId.flatMap { workspace.panels[$0] as? TerminalPanel } != nil, history: node.history, canResume: node.history == nil ? nil : historyEntries[node.id] != nil)
+            OMGCanvasSnapshot.Node(id: node.id, surfaceId: node.surfaceId, title: node.title, runtime: node.runtime, createdAt: node.createdAt, x: node.x, y: node.y, available: node.surfaceId.flatMap { workspace.panels[$0] as? TerminalPanel } != nil, history: node.history, canResume: node.history == nil ? nil : historyEntries[node.id] != nil, conversation: node.conversation, chatStatus: state.chatModels[node.id]?.statusLabel)
         }
         let payload = OMGCanvasSnapshot(
             revision: state.revision, locale: Locale.current.identifier,
             workspace: .init(id: workspace.id, title: workspace.title), nodes: nodes, edges: state.graph.edges,
             selectedId: state.selectedId, terminalOpen: state.presentedSurfaceId != nil, viewport: state.graph.viewport,
-            runtimes: ["shell", "python", "codex", "claude"].map { .init(id: $0, label: $0, available: runtimeLaunches[$0] != nil && !workspace.isRemoteWorkspace) },
-            previewOpen: state.isChatPreviewPresented
+            runtimes: ["codex", "claude", "shell", "python"].map { .init(id: $0, label: $0, available: runtimeLaunches[$0] != nil && !workspace.isRemoteWorkspace) },
+            chatOpen: state.isChatPresented
         )
         return (try? payload.dictionary()) ?? [:]
     }

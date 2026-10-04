@@ -38,9 +38,15 @@
   const observationLabels = {"en": "Observation", "de": "Beobachtung", "fr": "Observation", "ar": "رصد", "es": "Observación", "zh-Hant": "觀測記錄", "zh-Hans": "观测记录", "ko": "관찰 기록", "ja": "観測記録"};
   for (const [locale,label] of Object.entries(observationLabels)) catalogs[locale].roleObservation=label;
   keys.push('roleObservation');
-  const chatPreviewLabels = {"en": "Chat preview", "de": "Chat-Vorschau", "fr": "Aperçu du chat", "ar": "معاينة المحادثة", "es": "Vista previa del chat", "zh-Hant": "聊天預覽", "zh-Hans": "聊天预览", "ko": "채팅 미리보기", "ja": "チャットプレビュー"};
-  for (const [locale, label] of Object.entries(chatPreviewLabels)) catalogs[locale].chatPreview = label;
-  keys.push('chatPreview');
+  const openChatLabels = {"en": "Open chat", "de": "Chat öffnen", "fr": "Ouvrir le chat", "ar": "فتح المحادثة", "es": "Abrir chat", "zh-Hant": "開啟聊天", "zh-Hans": "打开聊天", "ko": "채팅 열기", "ja": "チャットを開く"};
+  const newChatLabels = {"en": "New chat", "de": "Neuer Chat", "fr": "Nouveau chat", "ar": "محادثة جديدة", "es": "Nuevo chat", "zh-Hant": "新聊天", "zh-Hans": "新聊天", "ko": "새 채팅", "ja": "新しいチャット"};
+  const chatHelpLabels = {"en": "Opens a real conversation in the selected provider.", "de": "Öffnet eine echte Unterhaltung beim ausgewählten Anbieter.", "fr": "Ouvre une vraie conversation avec le fournisseur sélectionné.", "ar": "يفتح محادثة حقيقية لدى المزوّد المحدد.", "es": "Abre una conversación real con el proveedor seleccionado.", "zh-Hant": "使用所選提供者開啟真實對話。", "zh-Hans": "使用所选提供方打开真实对话。", "ko": "선택한 공급자에서 실제 대화를 엽니다.", "ja": "選択したプロバイダーで実際の会話を開きます。"};
+  for (const locale of Object.keys(catalogs)) {
+    catalogs[locale].openChat = openChatLabels[locale];
+    catalogs[locale].newSession = newChatLabels[locale];
+    catalogs[locale].cliHelp = chatHelpLabels[locale];
+  }
+  keys.push('openChat');
   function localeFor(value) {
     const language = String(value || 'en').replaceAll('_', '-');
     if (/^zh-(TW|HK|MO|Hant)/i.test(language)) return 'zh-Hant';

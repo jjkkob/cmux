@@ -12,31 +12,35 @@ final class OMGCanvasState {
     @ObservationIgnored var refreshPresentation: (() -> Void)?
     @ObservationIgnored var dismissPresentation: (() -> Void)?
     var requestedOpenId: UUID?
-    private(set) var isChatPreviewPresented = false
-    private(set) var presentedPreviewNodeID: UUID?
-    @ObservationIgnored private var chatPreviews: [String: OMGCanvasChatPreviewModel] = [:]
+    var isChatPresented = false
+    var presentedChatNodeID: UUID?
+    var chatModels: [UUID: OMGCanvasChatModel] = [:]
 
-    /// Preview identity is presentation-only and never creates or resumes a graph session.
-    func presentChatPreview(nodeID: UUID?) throws -> OMGCanvasChatPreviewModel {
-        if let nodeID, !graph.nodes.contains(where: { $0.id == nodeID }) {
-            throw OMGCanvasBridgeRequest.Failure.invalid
-        }
-        let key = nodeID.map { "node:\($0.uuidString)" } ?? "workspace"
-        let model = chatPreviews[key] ?? OMGCanvasChatPreviewModel()
-        chatPreviews[key] = model
-        presentedPreviewNodeID = nodeID
-        isChatPreviewPresented = true
+    func presentChat(nodeID: UUID) throws {
+        guard graph.nodes.contains(where: { $0.id == nodeID }) else { throw OMGCanvasBridgeRequest.Failure.invalid }
+        presentedChatNodeID = nodeID
+        isChatPresented = true
         presentedSurfaceId = nil
-        if let nodeID { selectedId = nodeID }
+        selectedId = nodeID
         changed()
-        return model
     }
 
-    func dismissChatPreview() {
-        guard isChatPreviewPresented else { return }
-        isChatPreviewPresented = false
-        presentedPreviewNodeID = nil
+    func dismissChat() {
+        guard isChatPresented else { return }
+        isChatPresented = false
+        presentedChatNodeID = nil
         changed()
+    }
+
+    @discardableResult
+    func addChat(conversation: OMGCanvasGraph.Conversation, title: String, requestID: UUID) -> UUID {
+        if let existing = graph.nodes.first(where: { $0.requestId == requestID }) { return existing.id }
+        let id = UUID()
+        graph.nodes.append(.init(id: id, surfaceId: nil, title: title, runtime: conversation.provider,
+            createdAt: ISO8601DateFormatter().string(from: Date()), x: Double(graph.nodes.count % 4) * 330 + 100,
+            y: Double(graph.nodes.count / 4) * 200 + 130, requestId: requestID, conversation: conversation))
+        changed()
+        return id
     }
 
     func changed() { revision &+= 1 }
@@ -48,9 +52,10 @@ final class OMGCanvasState {
         selectedId = nil
         requestedOpenId = nil
         presentedSurfaceId = nil
-        isChatPreviewPresented = false
-        presentedPreviewNodeID = nil
-        chatPreviews.removeAll()
+        isChatPresented = false
+        presentedChatNodeID = nil
+        chatModels.values.forEach { $0.shutdown() }
+        chatModels.removeAll()
         changed()
     }
 

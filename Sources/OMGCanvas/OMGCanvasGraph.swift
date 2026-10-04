@@ -12,6 +12,12 @@ struct OMGCanvasGraph: Codable, Equatable, Sendable {
         var y: Double
         var requestId: UUID?
         var history: History? = nil
+        var conversation: Conversation? = nil
+    }
+    struct Conversation: Codable, Equatable, Sendable {
+        var provider: String
+        var sessionID: String
+        var cwd: String
     }
     struct Edge: Codable, Equatable, Sendable {
         var id: UUID

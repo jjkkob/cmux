@@ -4,7 +4,7 @@
   else root.OMGCanvasBridge = api;
 })(typeof globalThis === 'object' ? globalThis : this, function () {
   'use strict';
-  const methods = new Set(['canvas.snapshot', 'session.create', 'session.open', 'session.preview', 'session.resume', 'session.dismiss', 'canvas.setPositions', 'canvas.link']);
+  const methods = new Set(['canvas.snapshot', 'session.create', 'session.open', 'session.resume', 'session.dismiss', 'canvas.setPositions', 'canvas.link']);
   const runtimes = new Set(['shell', 'python', 'codex', 'claude']);
   const relationshipKinds = new Set(['created_from', 'linked', 'spawn', 'fork', 'handoff', 'continuation']);
   const finite = Number.isFinite;
@@ -16,11 +16,12 @@
   }
   function snapshot(value) {
     if (!value || value.version !== 1 || !text(value.workspace?.id) || !Array.isArray(value.nodes) || !Array.isArray(value.edges) || !Array.isArray(value.runtimes) || !Number.isSafeInteger(value.revision)) throw fail('invalid_snapshot', 'Invalid canvas state.');
-    if (value.previewOpen != null && typeof value.previewOpen !== 'boolean') throw fail('invalid_snapshot', 'Invalid preview presentation.');
+    if (value.chatOpen != null && typeof value.chatOpen !== 'boolean') throw fail('invalid_snapshot', 'Invalid chat presentation.');
     const ids = new Set();
     const nodes = value.nodes.map(node => {
       if (!text(node.id) || ids.has(node.id) || ![node.x, node.y].every(finite)) throw fail('invalid_snapshot', 'Invalid session identity or position.');
       ids.add(node.id);
+      if (node.conversation != null && (!['codex', 'claude'].includes(node.conversation.provider) || !text(node.conversation.sessionID) || !text(node.conversation.cwd))) throw fail('invalid_snapshot', 'Invalid conversation identity.');
       if (node.history != null) {
         if (!text(node.history.source) || !text(node.history.sessionId)) throw fail('invalid_snapshot', 'Invalid historical session identity.');
         for (const key of ['summary', 'updatedAt', 'role', 'status', 'cwd', 'runtimeConfig']) {
@@ -36,14 +37,14 @@
       if (!text(edge.id) || edgeIDs.has(edge.id) || !ids.has(edge.source) || !ids.has(edge.target) || edge.source === edge.target || !relationshipKinds.has(edge.kind) || (edge.evidence != null && typeof edge.evidence !== 'string')) throw fail('invalid_snapshot', 'Invalid session relationship.');
       edgeIDs.add(edge.id); return {...edge};
     });
-    return {...value, nodes, edges, viewport: viewport(value.viewport), selectedId: ids.has(value.selectedId) ? value.selectedId : null, terminalOpen: value.terminalOpen === true, previewOpen: value.previewOpen === true};
+    return {...value, nodes, edges, viewport: viewport(value.viewport), selectedId: ids.has(value.selectedId) ? value.selectedId : null, terminalOpen: value.terminalOpen === true, chatOpen: value.chatOpen === true};
   }
   function request(method, params, id) {
     if (!methods.has(method)) throw fail('unsupported_method', 'Unsupported canvas action.');
     if (!text(id) || !params || typeof params !== 'object' || Array.isArray(params)) throw fail('invalid_request', 'Invalid canvas request.');
     if (method === 'session.create' && Object.keys(params).some(key => !['title', 'runtime'].includes(key))) throw fail('invalid_request', 'A new terminal accepts only a title and runtime.');
     if (method === 'session.resume' && (Object.keys(params).length !== 1 || !text(params.id))) throw fail('invalid_request', 'Resume requires one existing canvas node identity.');
-    if (method === 'session.preview' && (Object.keys(params).some(key => key !== 'id') || (Object.hasOwn(params, 'id') && !text(params.id)))) throw fail('invalid_request', 'Preview accepts only an existing canvas node identity.');
+    if (method === 'session.open' && (Object.keys(params).some(key => key !== 'id') || !text(params.id))) throw fail('invalid_request', 'Open requires an existing canvas node identity.');
     return {version: 1, id, method, params: JSON.parse(JSON.stringify(params))};
   }
   function unwrap(reply) {

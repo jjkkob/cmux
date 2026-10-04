@@ -3148,5 +3148,11 @@
     "source": "  }",
     "class": "syntax",
     "reason": "Synthetic Swift filename or code displayed verbatim in the sample diff; translating code would change the example syntax."
+  },
+  "omg.chat.message": {
+    "source": "Message…",
+    "identityLocales": {
+      "fr": "Message is the natural French UI noun and shares the English spelling; a translated entry is still required."
+    }
   }
 }

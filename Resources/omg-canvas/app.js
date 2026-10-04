@@ -75,7 +75,7 @@
   function roleName(role) {
     return t(({main:'roleConductor', conductor:'roleConductor', mission:'roleMission', worker:'roleWorker', observation:'roleObservation', reference:'roleReference'})[role] || 'roleUnknown');
   }
-  function availability(node) { return node.history ? roleName(node.history.role) : t(node.available === true ? 'available' : node.available === false ? 'unavailable' : 'unknownAvailability'); }
+  function availability(node) { if (node.chatStatus) return node.chatStatus; if (node.conversation) return t('history'); return node.history ? roleName(node.history.role) : t(node.available === true ? 'available' : node.available === false ? 'unavailable' : 'unknownAvailability'); }
   function nodeDate(value, historical = false) {
     const date = new Date(value);
     return !value || Number.isNaN(date.valueOf()) ? t('unknownDate') : t(historical ? 'recordedOn' : 'added', {date: date.toLocaleDateString(locale, {month: 'short', day: 'numeric'})});
@@ -137,7 +137,7 @@
       element._key = key;
       element.style.left = `${node.x}px`; element.style.top = `${node.y}px`;
       element.classList.toggle('selected', node.id === state.selectedId);
-      element.classList.toggle('unavailable', !node.history && node.available === false);
+      element.classList.toggle('unavailable', !node.history && !node.conversation && node.available === false);
       element.classList.toggle('historical', !!node.history);
       element.querySelector('.node-open-hit').setAttribute('aria-label', `${node.title} · ${runtimeName(node)} · ${availability(node)}`);
       element.querySelector('.runtime-badge').className = `runtime-badge ${node.runtime}`;
@@ -205,7 +205,7 @@
     renderRuntimes(); renderGraph(); renderSearch(); applyView(); connection();
     $('history-tools').hidden = !state.nodes.some(node => node.history);
     if (historyID && $('history-dialog').open) renderHistory();
-    const presentationOpen = state.terminalOpen || state.previewOpen;
+    const presentationOpen = state.terminalOpen || state.chatOpen;
     if (presentationOpen) $('history-dialog').close();
     canvas.inert = presentationOpen; $('toolbar').inert = presentationOpen; $('history-tools').inert = presentationOpen;
     document.body.classList.toggle('terminal-open', presentationOpen);
@@ -224,17 +224,10 @@
     finally { refreshBusy = false; }
   }
   async function openSession(id, refocus = false) {
-    if (drag || ((state?.terminalOpen || state?.previewOpen) && !refocus)) return;
+    if (drag || ((state?.terminalOpen || state?.chatOpen) && !refocus)) return;
     hideMenu();
-    if (nodeFor(id)?.history && !refocus) { showHistory(id); return; }
+    if (nodeFor(id)?.history && !['codex','claude'].includes(nodeFor(id)?.runtime) && !refocus) { showHistory(id); return; }
     try { receive(await client.send('session.open', {id})); }
-    catch (error) { notify(errorMessage(error)); }
-  }
-  async function openPreview(id) {
-    if (!state || state.terminalOpen || state.previewOpen) return;
-    hideMenu();
-    $('history-dialog').close();
-    try { receive(await client.send('session.preview', id ? {id} : {})); }
     catch (error) { notify(errorMessage(error)); }
   }
   function fullDate(value) {
@@ -306,7 +299,7 @@
     menu.hidden = false;
     menu.style.left = `${Math.max(12, Math.min(window.innerWidth - menu.offsetWidth - 12, rect.left))}px`;
     menu.style.top = `${Math.max(12, Math.min(window.innerHeight - menu.offsetHeight - 12, rect.bottom + 6))}px`;
-    $('menu-preview').focus();
+    $('menu-details').disabled = !nodeFor(id)?.history; $('menu-details').focus();
   }
   function openCreate() {
     hideMenu(); client.resetCreate(); $('create-form').reset(); formError('create-error');
@@ -352,23 +345,22 @@
     finally { $('link-submit').disabled = false; }
   });
   $('menu-link').addEventListener('click', () => openLink(menuID));
-  $('menu-preview').addEventListener('click', () => openPreview(menuID));
-  $('preview-button').addEventListener('click', () => openPreview());
-  $('history-preview').addEventListener('click', () => openPreview(historyID));
+  $('menu-details').addEventListener('click', () => { const id = menuID; hideMenu(); showHistory(id); });
+  $('history-chat').addEventListener('click', () => { $('history-dialog').close(); openSession(historyID); });
   $('create-button').addEventListener('click', () => openCreate()); $('empty-create').addEventListener('click', () => openCreate());
   $('retry-button').addEventListener('click', () => { refresh().then(() => saveLayout()); });
   document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $(button.dataset.close).close()));
   document.addEventListener('pointerdown', event => { if (!event.target.closest('#node-menu,.node-menu-button')) hideMenu(); });
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('node-menu').hidden) { const id = menuID; hideMenu(); [...$('nodes').children].find(node => node.dataset.id === id)?.querySelector('.node-menu-button').focus(); } });
   function startNodeDrag(event, id) {
-    if (event.button !== 0 || event.target.closest('.node-menu-button') || state?.terminalOpen || state?.previewOpen) return;
+    if (event.button !== 0 || event.target.closest('.node-menu-button') || state?.terminalOpen || state?.chatOpen) return;
     const node = nodeFor(id); if (!node) return;
     event.preventDefault(); event.stopPropagation(); hideMenu();
     drag = {pointerID: event.pointerId, nodeId: id, x: event.clientX, y: event.clientY, originX: node.x, originY: node.y, position: {x: node.x, y: node.y}, moved: false, element: event.currentTarget};
     event.currentTarget.setPointerCapture(event.pointerId);
   }
   canvas.addEventListener('pointerdown', event => {
-    if (event.button !== 0 || event.target.closest('.session-node,button') || state?.terminalOpen || state?.previewOpen) return;
+    if (event.button !== 0 || event.target.closest('.session-node,button') || state?.terminalOpen || state?.chatOpen) return;
     hideMenu(); canvas.focus({preventScroll: true});
     drag = {pointerID: event.pointerId, x: event.clientX, y: event.clientY, originX: view.x, originY: view.y, moved: false};
     canvas.setPointerCapture(event.pointerId); canvas.classList.add('dragging');
@@ -394,7 +386,7 @@
   }
   window.addEventListener('pointerup', endDrag); window.addEventListener('pointercancel', endDrag);
   canvas.addEventListener('wheel', event => {
-    if (!state || state.terminalOpen || state.previewOpen || document.querySelector('dialog[open]')) return;
+    if (!state || state.terminalOpen || state.chatOpen || document.querySelector('dialog[open]')) return;
     event.preventDefault(); hideMenu();
     if (event.ctrlKey) view = bridge.zoom(view, event.clientX, event.clientY, view.scale * Math.exp(-event.deltaY * .0025));
     else { const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1; view.x -= event.deltaX * unit; view.y -= event.deltaY * unit; }

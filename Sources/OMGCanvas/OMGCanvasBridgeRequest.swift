@@ -6,7 +6,6 @@ struct OMGCanvasBridgeRequest: Decodable {
         case snapshot = "canvas.snapshot"
         case create = "session.create"
         case open = "session.open"
-        case preview = "session.preview"
         case resume = "session.resume"
         case dismiss = "session.dismiss"
         case positions = "canvas.setPositions"
@@ -38,10 +37,10 @@ struct OMGCanvasBridgeRequest: Decodable {
             guard let fields = (body as? [String: Any])?["params"] as? [String: Any],
                   Set(fields.keys).isSubset(of: ["title", "runtime"]) else { throw Failure.invalid }
         }
-        if method == .preview {
+        if method == .open {
             guard let fields = (body as? [String: Any])?["params"] as? [String: Any],
                   Set(fields.keys).isSubset(of: ["id"]),
-                  fields["id"] == nil || params.id != nil else { throw Failure.invalid }
+                  params.id != nil else { throw Failure.invalid }
         }
     }
 
