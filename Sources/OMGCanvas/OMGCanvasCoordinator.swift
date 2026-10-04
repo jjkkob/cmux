@@ -1,4 +1,5 @@
 import AppKit
+import CmuxAgentSessionStore
 import WebKit
 
 /// Trusted bundled-page bridge. Workspace owns processes; this coordinator owns presentation only.
@@ -13,6 +14,10 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
     private var disposed = false
     private var lastPayload: Data?
     private var availability: [UUID: Bool] = [:]
+    private let historyResolver = OMGCanvasHistorySessionResolver(loader: SessionIndexSnapshotLoader(), repository: AmpHookSessionRepository())
+    private var historyEntries: [UUID: SessionEntry] = [:]
+    private var historyIdentity: [String] = []
+    private var historyLoad: Task<Void, Never>?
     private var runtimeLaunches: [String: OMGCanvasRuntimeResolver.Launch] = [:]
 
     init(workspace: Workspace, resourceURL: URL?) {
@@ -35,6 +40,7 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         self.host = host
         host.onDismiss = { [weak self] in self?.dismiss() }
         workspace?.omgCanvasState.dismissPresentation = { [weak self] in self?.dismiss() }
+        workspace?.omgCanvasState.refreshPresentation = { [weak self] in self?.reconcile(); self?.push() }
         if let shellURL {
             webView.loadFileURL(shellURL, allowingReadAccessTo: shellURL.deletingLastPathComponent())
         }
@@ -46,6 +52,10 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         active = isVisible
         if !isVisible { dismiss(focusCanvas: false) }
         reconcile()
+        if isVisible, let state = workspace?.omgCanvasState, let id = state.requestedOpenId {
+            state.requestedOpenId = nil
+            try? open(id)
+        }
         push()
     }
 
@@ -65,13 +75,16 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         if let surface = state.presentedSurfaceId, workspace.panels[surface] as? TerminalPanel == nil {
             dismiss()
         }
+        refreshHistoryAvailability()
     }
 
     func dispose() {
         guard !disposed else { return }
         dismiss(focusCanvas: false)
         disposed = true
+        historyLoad?.cancel()
         workspace?.omgCanvasState.dismissPresentation = nil
+        workspace?.omgCanvasState.refreshPresentation = nil
         host?.webView.configuration.userContentController.removeScriptMessageHandler(forName: "omgCanvas", contentWorld: .page)
         host?.webView.navigationDelegate = nil
         host?.webView.stopLoading()
@@ -84,9 +97,22 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         }
         do {
             let request = try OMGCanvasBridgeRequest(body: message.body)
-            let value = try handle(request)
-            replyHandler(["ok": true, "value": value], nil)
-            push()
+            if request.method == .resume {
+                Task { @MainActor in
+                    do {
+                        guard let id = request.params.id else { throw OMGCanvasBridgeRequest.Failure.invalid }
+                        try await resumeHistory(id)
+                        replyHandler(["ok": true, "value": snapshot()], nil)
+                        push()
+                    } catch {
+                        replyHandler(errorReply(error as? OMGCanvasBridgeRequest.Failure ?? .historyUnavailable), nil)
+                    }
+                }
+            } else {
+                let value = try handle(request)
+                replyHandler(["ok": true, "value": value], nil)
+                push()
+            }
         } catch {
             replyHandler(errorReply(error as? OMGCanvasBridgeRequest.Failure ?? .invalid), nil)
         }
@@ -99,6 +125,8 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         switch request.method {
         case .snapshot:
             reconcile()
+        case .resume:
+            throw OMGCanvasBridgeRequest.Failure.invalid
         case .open:
             guard let id = request.params.id else { throw OMGCanvasBridgeRequest.Failure.invalid }
             try open(id)
@@ -133,6 +161,77 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         return snapshot()
     }
 
+    /// The index scan does not launch a provider or read commands from the import file.
+    private func refreshHistoryAvailability() {
+        guard let workspace else { return }
+        let nodes = workspace.omgCanvasState.graph.nodes.filter { $0.history != nil }
+        let identity = nodes.map { $0.id.uuidString + ":" + ($0.history?.externalKey ?? "") }.sorted()
+        guard identity != historyIdentity else { return }
+        historyIdentity = identity
+        historyEntries = [:]
+        historyLoad?.cancel()
+        guard !nodes.isEmpty else { return }
+        historyLoad = Task { @MainActor [weak self, historyResolver] in
+            let matches = await historyResolver.resolve(nodes)
+            guard let self, !Task.isCancelled, !self.disposed, self.historyIdentity == identity else { return }
+            self.historyEntries = matches
+            self.workspace?.omgCanvasState.changed()
+            self.push()
+        }
+    }
+
+    /// Only this explicit action can turn an imported history reference into a live terminal.
+    private func resumeHistory(_ id: UUID) async throws {
+        guard active, !disposed, let workspace, workspace.omgCanvasState.enabled,
+              !workspace.isRemoteWorkspace, let manager = workspace.owningTabManager,
+              let imported = workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }), imported.history != nil
+        else { throw OMGCanvasBridgeRequest.Failure.historyUnavailable }
+        if let surface = imported.surfaceId, workspace.panels[surface] is TerminalPanel {
+            try open(id)
+            return
+        }
+        // Refresh at the execution boundary so a removed/changed indexed record cannot use a stale launch.
+        let matches = await historyResolver.resolve([imported])
+        guard active, !disposed, workspace.omgCanvasState.enabled,
+              let entry = matches[id], let launch = entry.resumeLaunch, launch.strategy == .restoreVerb,
+              let index = workspace.omgCanvasState.graph.nodes.firstIndex(where: { $0.id == id && $0.history?.externalKey == imported.history?.externalKey })
+        else { throw OMGCanvasBridgeRequest.Failure.historyUnavailable }
+        // Another request may have resumed this same node during the async lookup.
+        if let surface = workspace.omgCanvasState.graph.nodes[index].surfaceId, workspace.panels[surface] is TerminalPanel {
+            try open(id)
+            return
+        }
+        if let target = SessionEntryResumeCoordinator.activeTarget(for: entry, tabManager: manager) {
+            // Reuse the exact live provider conversation; never start another copy as a fallback.
+            if target.workspaceID == workspace.id {
+                if let bound = workspace.omgCanvasState.graph.nodes.first(where: { $0.id != id && $0.surfaceId == target.surfaceID }) {
+                    try open(bound.id)
+                    return
+                }
+                workspace.omgCanvasState.graph.nodes[index].surfaceId = target.surfaceID
+                try open(id)
+            } else {
+                if let targetWorkspace = manager.tabs.first(where: { $0.id == target.workspaceID }),
+                   targetWorkspace.omgCanvasState.enabled,
+                   let bound = targetWorkspace.omgCanvasState.graph.nodes.first(where: { $0.surfaceId == target.surfaceID }) {
+                    targetWorkspace.omgCanvasState.requestedOpenId = bound.id
+                }
+                manager.focusTab(target.workspaceID, surfaceId: target.surfaceID)
+            }
+            return
+        }
+        guard let pane = workspace.bonsplitController.allPaneIds.first,
+              let panel = workspace.newTerminalSurface(inPane: pane, focus: false,
+                workingDirectory: launch.workingDirectory, initialInput: launch.initialInput,
+                startupRestoreAgent: launch.startupRestoreAgent,
+                suppressWorkspaceRemoteStartupCommand: true, allowTextBoxFocusDefault: false)
+        else { throw OMGCanvasBridgeRequest.Failure.createFailed }
+        // Bind before the next reconciliation so the historical node keeps its stable graph identity.
+        workspace.omgCanvasState.graph.nodes[index].surfaceId = panel.id
+        workspace.omgCanvasState.changed()
+        try open(id)
+    }
+
     private func open(_ id: UUID) throws {
         guard active, let workspace, let host,
               let node = workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }),
@@ -161,7 +260,7 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         guard let workspace else { return [:] }
         let state = workspace.omgCanvasState
         let nodes = state.graph.nodes.map { node in
-            OMGCanvasSnapshot.Node(id: node.id, surfaceId: node.surfaceId, title: node.title, runtime: node.runtime, createdAt: node.createdAt, x: node.x, y: node.y, available: node.surfaceId.flatMap { workspace.panels[$0] as? TerminalPanel } != nil)
+            OMGCanvasSnapshot.Node(id: node.id, surfaceId: node.surfaceId, title: node.title, runtime: node.runtime, createdAt: node.createdAt, x: node.x, y: node.y, available: node.surfaceId.flatMap { workspace.panels[$0] as? TerminalPanel } != nil, history: node.history, canResume: node.history == nil ? nil : historyEntries[node.id] != nil)
         }
         let payload = OMGCanvasSnapshot(
             revision: state.revision, locale: Locale.current.identifier,
@@ -195,6 +294,7 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         let message: String
         switch failure {
         case .invalid: message = String(localized: "omg.canvas.invalid", defaultValue: "This canvas request could not be applied.")
+        case .historyUnavailable: message = String(localized: "omg.canvas.historyUnavailable", defaultValue: "The original local CLI session could not be verified. You can still review its history.")
         case .unavailable: message = String(localized: "omg.canvas.unavailable", defaultValue: "This terminal is no longer available.")
         case .missingRuntime: message = String(localized: "omg.canvas.missingRuntime", defaultValue: "This runtime could not be found on this Mac.")
         case .createFailed: message = String(localized: "omg.canvas.createFailed", defaultValue: "The terminal could not be created.")

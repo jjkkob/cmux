@@ -13,6 +13,8 @@ struct OMGCanvasSnapshot: Codable {
         var x: Double
         var y: Double
         var available: Bool?
+        var history: OMGCanvasGraph.History? = nil
+        var canResume: Bool? = nil
     }
     var version = 1
     var revision: Int

@@ -121,10 +121,85 @@ test('unobserved runtime and availability remain unknown, without invented lifec
 
 test('invalid or dangling relationships are rejected rather than called created_from', () => {
   const value = clone(fixture.linkResponse.value);
-  value.edges[0].kind = 'fork';
+  value.edges[0].kind = 'merge';
   assert.throws(() => bridge.snapshot(value), error => error.code === 'invalid_snapshot');
   value.edges[0].kind = 'linked'; value.edges[0].target = 'missing-node';
   assert.throws(() => bridge.snapshot(value), error => error.code === 'invalid_snapshot');
+});
+
+test('native history snapshot preserves identity, dates, evidence and recorded metadata without live status', () => {
+  const saved = bridge.snapshot(clone(fixture.historySnapshot));
+  assert.deepEqual(saved.nodes, fixture.historySnapshot.nodes);
+  assert.deepEqual(saved.edges, fixture.historySnapshot.edges);
+  assert.equal(saved.nodes[0].available, false);
+  assert.equal(saved.nodes[0].canResume, true);
+  assert.equal(saved.nodes[3].createdAt, '', 'unknown source date must remain unknown');
+  assert.deepEqual(saved.edges.map(edge => edge.kind), ['spawn', 'fork', 'handoff', 'continuation']);
+  assert.equal(saved.nodes[2].history.sessionId, 'synthetic-worker:3');
+});
+
+test('resume uses only the exact imported canvas identity and preserves native failures', async () => {
+  let sent;
+  const client = bridge.createClient(async body => { sent=body; return fixture.errorResponse; }, () => fixture.historyResumeRequest.id);
+  await assert.rejects(client.send('session.resume',fixture.historyResumeRequest.params), error => error.code === 'unavailable');
+  assert.deepEqual(sent, fixture.historyResumeRequest);
+  assert.throws(() => client.send('session.resume',{...fixture.historyResumeRequest.params,command:'run'}), error => error.code === 'invalid_request');
+  assert.throws(() => client.send('session.resume',{}), error => error.code === 'invalid_request');
+});
+
+test('main and mission default keeps only existing visible-endpoint edges; show all reveals workers and observations', () => {
+  const saved=bridge.snapshot(clone(fixture.historySnapshot));
+  const normal=bridge.visibleGraph(saved);
+  assert.deepEqual(normal.matching.map(node => node.history.role), ['main','mission','main']);
+  assert.deepEqual(normal.edges.map(edge => edge.kind), ['spawn','handoff']);
+  assert.equal(normal.hiddenEdges,2);
+  const all=bridge.visibleGraph(saved,{includeAll:true});
+  assert.equal(all.nodes.length,5);
+  assert.deepEqual(all.edges,saved.edges);
+  assert.deepEqual(saved,bridge.snapshot(fixture.historySnapshot),'filters never mutate imported graph');
+});
+
+test('search finds hidden workers by original session identity without synthesizing lineage', () => {
+  const saved=bridge.snapshot(clone(fixture.historySnapshot));
+  const found=bridge.visibleGraph(saved,{query:'synthetic-worker:3'});
+  assert.equal(found.matching.length,1);
+  assert.equal(found.matching[0].history.role,'worker');
+  assert.deepEqual(found.edges,[]);
+  assert.equal(found.hiddenEdges,4);
+  const absent=bridge.visibleGraph(saved,{query:'No such session'});
+  assert.equal(absent.nodes.length,0);
+});
+
+test('large historical graphs retain all records while mounting only nearby nodes', () => {
+  const saved=bridge.snapshot(clone(fixture.historySnapshot));
+  saved.nodes=Array.from({length:1601},(_,i) => ({...saved.nodes[0],id:`synthetic-${i}`,x:(i%40)*360,y:Math.floor(i/40)*240}));
+  saved.edges=[];
+  const visible=bridge.visibleGraph(saved,{includeAll:true,view:{x:0,y:0,scale:1},width:1200,height:800});
+  assert.equal(visible.matching.length,1601);
+  assert.ok(visible.nodes.length>0 && visible.nodes.length<40);
+  const later=bridge.visibleGraph(saved,{includeAll:true,view:{x:-7200,y:-4800,scale:1},width:1200,height:800});
+  assert.ok(later.nodes.some(node => !visible.nodes.includes(node)));
+  assert.equal(saved.nodes.length,1601);
+});
+
+test('culling keeps a real edge crossing the viewport even with both nodes outside it', () => {
+  const saved=bridge.snapshot(clone(fixture.historySnapshot));
+  saved.nodes=saved.nodes.slice(0,2);
+  saved.nodes[0].x=-800; saved.nodes[1].x=1600; saved.nodes.forEach(node => {node.y=200;});
+  saved.edges=saved.edges.slice(0,1);
+  const visible=bridge.visibleGraph(saved,{view:{x:0,y:0,scale:1},width:1000,height:700,overscan:0});
+  assert.equal(visible.nodes.length,0);
+  assert.deepEqual(visible.edges,saved.edges);
+});
+
+test('malformed historical metadata fails as a contract error', () => {
+  const saved=clone(fixture.historySnapshot);
+  saved.nodes[0].history.source='';
+  assert.throws(() => bridge.snapshot(saved),error => error.code === 'invalid_snapshot');
+  saved.nodes[0].history.source='codex'; saved.nodes[0].history.summary={text:'not a string'};
+  assert.throws(() => bridge.snapshot(saved),error => error.code === 'invalid_snapshot');
+  saved.nodes[0].history.summary='Valid'; saved.nodes[0].canResume='yes';
+  assert.throws(() => bridge.snapshot(saved),error => error.code === 'invalid_snapshot');
 });
 
 test('explicit relationships from saved history remain intact without inventing new ones', () => {
@@ -156,6 +231,9 @@ test('nine locale catalogs have matching keys and preserve interpolation values'
     assert.deepEqual(Object.keys(catalog), messages.keys);
     assert.match(messages.translate(locale, 'added', {date: '2026-10-03'}), /2026-10-03/);
     assert.ok(messages.translate(locale, 'connectSession'));
+    assert.match(messages.translate(locale,'shownCount',{shown:155,total:1601}),/155/);
+    assert.match(messages.translate(locale,'shownCount',{shown:155,total:1601}),/1601/);
+    assert.ok(messages.translate(locale,'resumeUnavailable'));
   }
   assert.equal(messages.localeFor('en_US'), 'en');
   assert.equal(messages.localeFor('zh-TW'), 'zh-Hant');

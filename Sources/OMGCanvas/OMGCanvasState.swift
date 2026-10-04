@@ -9,7 +9,9 @@ final class OMGCanvasState {
     var selectedId: UUID?
     var presentedSurfaceId: UUID?
     var revision = 0
+    @ObservationIgnored var refreshPresentation: (() -> Void)?
     @ObservationIgnored var dismissPresentation: (() -> Void)?
+    var requestedOpenId: UUID?
 
     func changed() { revision &+= 1 }
 
@@ -18,6 +20,7 @@ final class OMGCanvasState {
         graph.remapSurfaces(mapping)
         self.graph = graph
         selectedId = nil
+        requestedOpenId = nil
         presentedSurfaceId = nil
         changed()
     }

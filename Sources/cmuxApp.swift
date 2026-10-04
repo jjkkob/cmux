@@ -1182,6 +1182,10 @@ struct cmuxApp: App {
             }
             .disabled(activeTabManager.selectedWorkspace == nil)
 
+            Button(String(localized: "omg.canvas.importHistory", defaultValue: "Import Session History…")) {
+                OMGCanvasHistoryImportCoordinator(tabManager: activeTabManager, repository: OMGCanvasHistoryRepository()).chooseFile()
+            }
+
             splitCommandButton(title: String(localized: "menu.view.toggleCanvasLayout", defaultValue: "Toggle Canvas Layout"), shortcut: menuShortcut(for: .toggleCanvasLayout)) {
                 guard let workspace = activeTabManager.selectedWorkspace else { return }
                 CanvasActionExecutor(workspace: workspace).perform(.toggleLayout)

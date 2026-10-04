@@ -7,10 +7,11 @@
   let view = {x: 0, y: 0, scale: 1}, viewGeneration = 0, savedViewGeneration = 0;
   let positions = new Map(), drag = null, menuID = null, linkSource = null;
   let layoutBusy = false, createBusy = false, refreshBusy = false, terminalWasOpen = false;
-  let layoutTimer, toastTimer, edgeKey = '', runtimeKey = '';
+  let layoutTimer, toastTimer, edgeKey = '', runtimeKey = '', renderFrame = null;
+  let nodeIndex = new Map(), graph = null, historyID = null, resumeBusy = false;
   const t = (key, values) => messages.translate(locale, key, values);
   const text = (element, value) => { if (element.textContent !== value) element.textContent = value; };
-  const nodeFor = id => state?.nodes.find(node => node.id === id);
+  const nodeFor = id => nodeIndex.get(id);
   const client = bridge.createClient(async request => {
     const handler = window.webkit?.messageHandlers?.omgCanvas;
     if (!handler) { const error = new Error(t('bridgeUnavailable')); error.code = 'bridge_unavailable'; throw error; }
@@ -38,12 +39,14 @@
     document.documentElement.lang = locale; document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
     document.querySelectorAll('[data-i18n]').forEach(el => text(el, t(el.dataset.i18n)));
     document.querySelectorAll('[data-i18n-label]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nLabel)));
+    $('history-search').placeholder = t('searchSessions');
     canvas.setAttribute('aria-label', t('canvas'));
   }
   function applyView() {
     world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.scale})`;
     canvas.style.backgroundSize = `${24 * view.scale}px ${24 * view.scale}px`;
     canvas.style.backgroundPosition = `${view.x}px ${view.y}px`;
+    if (state && !renderFrame) renderFrame = requestAnimationFrame(() => { renderFrame = null; renderGraph(); });
   }
   function scheduleLayout() { clearTimeout(layoutTimer); layoutTimer = setTimeout(saveLayout, 300); }
   async function saveLayout() {
@@ -68,14 +71,48 @@
     if (node.runtime === 'unknown') return t('unknownRuntime');
     return state.runtimes.find(runtime => runtime.id === node.runtime)?.label || t('unknownRuntime');
   }
-  function availability(node) { return t(node.available === true ? 'available' : node.available === false ? 'unavailable' : 'unknownAvailability'); }
-  function nodeDate(value) {
+  function roleName(role) {
+    return t(({main:'roleConductor', conductor:'roleConductor', mission:'roleMission', worker:'roleWorker', observation:'roleObservation', reference:'roleReference'})[role] || 'roleUnknown');
+  }
+  function availability(node) { return node.history ? roleName(node.history.role) : t(node.available === true ? 'available' : node.available === false ? 'unavailable' : 'unknownAvailability'); }
+  function nodeDate(value, historical = false) {
     const date = new Date(value);
-    return Number.isNaN(date.valueOf()) ? '' : t('added', {date: date.toLocaleDateString(locale, {month: 'short', day: 'numeric'})});
+    return !value || Number.isNaN(date.valueOf()) ? t('unknownDate') : t(historical ? 'recordedOn' : 'added', {date: date.toLocaleDateString(locale, {month: 'short', day: 'numeric'})});
+  }
+  function renderGraph() {
+    if (!state) return;
+    graph = bridge.visibleGraph(state, {query:$('history-search').value, includeAll:$('include-workers').checked, view, width:window.innerWidth, height:window.innerHeight});
+    // Keep a captured drag element mounted while the pointer leaves the viewport.
+    if (drag?.nodeId && nodeFor(drag.nodeId) && !graph.nodes.some(node => node.id === drag.nodeId)) graph.nodes.push(nodeFor(drag.nodeId));
+    renderNodes(); renderEdges();
+    text($('node-count'), t('shownCount', {shown:graph.matching.length, total:state.nodes.length}));
+    $('node-count').title = graph.hiddenEdges ? t('filteredLineage', {count:graph.hiddenEdges}) : '';
+    text($('filter-hint'), graph.hiddenEdges ? t('filteredLineage', {count:graph.hiddenEdges}) : '');
+  }
+  function renderSearch() {
+    if (!graph) return;
+    const query = $('history-search').value.trim();
+    $('search-results').hidden = !query;
+    $('search-result-list').replaceChildren();
+    if (!query) return;
+    text($('search-result-count'), graph.matching.length ? t('resultCount', {shown:Math.min(30,graph.matching.length), total:graph.matching.length}) : t('noMatches'));
+    for (const node of graph.matching.slice(0,30)) {
+      const button = document.createElement('button'); button.type = 'button';
+      const title = document.createElement('span'); title.textContent = node.title;
+      const subtitle = document.createElement('small'); subtitle.textContent = `${runtimeName(node)} · ${availability(node)} · ${nodeDate(node.createdAt,!!node.history)}`;
+      button.append(title,subtitle); button.addEventListener('click', () => { focusNode(node.id); $('search-results').hidden = true; openSession(node.id); });
+      $('search-result-list').append(button);
+    }
+  }
+  function focusNode(id) {
+    const node = nodeFor(id); if (!node) return;
+    view.x = window.innerWidth / 2 - (node.x + 129) * view.scale;
+    view.y = window.innerHeight / 2 - (node.y + 77) * view.scale;
+    viewGeneration++; renderGraph(); applyView(); scheduleLayout();
   }
   function renderNodes() {
     const previous = new Map([...$('nodes').children].map(el => [el.dataset.id, el]));
-    for (const node of state.nodes) {
+    for (const node of graph.nodes) {
       let element = previous.get(node.id);
       if (!element) {
         element = document.createElement('article'); element.className = 'session-node'; element.dataset.id = node.id;
@@ -95,29 +132,29 @@
       element._key = key;
       element.style.left = `${node.x}px`; element.style.top = `${node.y}px`;
       element.classList.toggle('selected', node.id === state.selectedId);
-      element.classList.toggle('unavailable', node.available === false);
+      element.classList.toggle('unavailable', !node.history && node.available === false);
+      element.classList.toggle('historical', !!node.history);
       element.querySelector('.node-open-hit').setAttribute('aria-label', `${node.title} · ${runtimeName(node)} · ${availability(node)}`);
       element.querySelector('.runtime-badge').className = `runtime-badge ${node.runtime}`;
       text(element.querySelector('.runtime-badge'), runtimeName(node));
       text(element.querySelector('.node-title'), node.title || t('session'));
       text(element.querySelector('.availability-text'), availability(node));
       element.querySelector('.status-dot').className = `status-dot ${node.available === true ? 'connected' : ''}`;
-      text(element.querySelector('.node-time'), nodeDate(node.createdAt));
+      text(element.querySelector('.node-time'), nodeDate(node.createdAt, !!node.history));
       element.querySelector('.node-menu-button').setAttribute('aria-label', `${t('sessionActions')}: ${node.title}`);
     }
     previous.forEach(element => element.remove());
     $('empty').hidden = !!state.nodes.length;
-    text($('node-count'), `${t('sessions')} · ${state.nodes.length}`);
   }
   function svg(name, attributes) {
     const element = document.createElementNS('http://www.w3.org/2000/svg', name);
     Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value)); return element;
   }
   function renderEdges() {
-    const key = JSON.stringify([state.edges, state.nodes.map(n => [n.id, n.x, n.y]), state.selectedId, locale]);
+    const key = JSON.stringify([graph.edges.map(edge => [edge, nodeFor(edge.source)?.x,nodeFor(edge.source)?.y,nodeFor(edge.target)?.x,nodeFor(edge.target)?.y]), state.selectedId, historyID, locale]);
     if (key === edgeKey) return; edgeKey = key;
     $('edges').replaceChildren();
-    for (const edge of state.edges) {
+    for (const edge of graph.edges) {
       const source = nodeFor(edge.source), target = nodeFor(edge.target);
       if (!source || !target) continue;
       const sx = source.x + 258, sy = source.y + 77, tx = target.x, ty = target.y + 77;
@@ -131,13 +168,11 @@
         path = `M${sx} ${sy} C${sx + 42} ${sy} ${sx + 42} ${bottom} ${sx + 10} ${bottom} L${tx - 10} ${bottom} C${tx - 42} ${bottom} ${tx - 42} ${ty} ${tx} ${ty}`;
         labelX = (sx + tx) / 2; labelY = bottom - 10;
       }
-      const active = state.selectedId === source.id || state.selectedId === target.id;
-      $('edges').append(svg('path', {d: path, class: `connection-path${edge.kind === 'linked' ? ' manual' : ''}${active ? ' emphasis' : ''}`}));
+      const active = [state.selectedId,historyID].includes(source.id) || [state.selectedId,historyID].includes(target.id);
+      $('edges').append(svg('path', {d: path, class: `connection-path ${edge.kind}${edge.kind === 'linked' ? ' manual' : ''}${active ? ' emphasis' : ''}`}));
       const label = svg('text', {x: labelX, y: labelY, 'text-anchor': 'middle', class: 'edge-label'});
-      label.textContent = t(edge.kind === 'linked' ? 'linked' : 'createdFrom');
+      label.textContent = t(edge.kind === 'created_from' ? 'createdFrom' : edge.kind);
       const group = svg('g', {}); group.append(label); $('edges').append(group);
-      const width = label.getComputedTextLength() + 14;
-      group.prepend(svg('rect', {x: labelX - width / 2, y: labelY - 12, width, height: 18, rx: 5, fill: '#f4f3ef'}));
       $('edges').append(svg('path', {d: `M${tx - 7} ${ty - 4} L${tx} ${ty} L${tx - 7} ${ty + 4}`, fill: 'none', stroke: active ? '#6b835b' : '#adb5a1', 'stroke-width': 1.5}));
     }
   }
@@ -158,10 +193,14 @@
     const oldLocale = locale; locale = messages.localeFor(next.locale || navigator.language);
     if (locale !== oldLocale) { localize(); runtimeKey = ''; }
     state = {...next, nodes: next.nodes.map(node => ({...node, ...(positions.get(node.id) || {})}))};
+    nodeIndex = new Map(state.nodes.map(node => [node.id,node]));
     if (drag?.nodeId) { const node = nodeFor(drag.nodeId); if (node) Object.assign(node, drag.position); }
     if (!drag && viewGeneration === savedViewGeneration) view = {...next.viewport};
     text($('workspace-title'), next.workspace.title || t('canvas'));
-    renderRuntimes(); renderNodes(); renderEdges(); applyView(); connection();
+    renderRuntimes(); renderGraph(); renderSearch(); applyView(); connection();
+    $('history-tools').hidden = !state.nodes.some(node => node.history);
+    if (historyID && $('history-dialog').open) renderHistory();
+    if (state.terminalOpen) $('history-dialog').close();
     canvas.inert = state.terminalOpen; $('toolbar').inert = state.terminalOpen;
     document.body.classList.toggle('terminal-open', state.terminalOpen);
     if (terminalWasOpen && !state.terminalOpen) {
@@ -181,9 +220,73 @@
   async function openSession(id, refocus = false) {
     if (drag || (state?.terminalOpen && !refocus)) return;
     hideMenu();
+    if (nodeFor(id)?.history && !refocus) { showHistory(id); return; }
     try { receive(await client.send('session.open', {id})); }
     catch (error) { notify(errorMessage(error)); }
   }
+  function fullDate(value) {
+    const date = new Date(value);
+    return !value || Number.isNaN(date.valueOf()) ? t('unknownDate') : date.toLocaleString(locale, {dateStyle:'medium',timeStyle:'short'});
+  }
+  function metadataRow(list, label, value, wide = false) {
+    const row = document.createElement('div'); if (wide) row.className = 'wide';
+    const term = document.createElement('dt'); term.textContent = label;
+    const detail = document.createElement('dd'); detail.textContent = value;
+    row.append(term,detail); list.append(row);
+  }
+  function renderHistory() {
+    const node = nodeFor(historyID); if (!node?.history) { $('history-dialog').close(); return; }
+    const history = node.history, metadata = $('history-metadata'); metadata.replaceChildren();
+    text($('history-title'), node.title); text($('history-eyebrow'), `${t('history')} · ${roleName(history.role)}`);
+    metadataRow(metadata,t('runtimeConfig'),history.runtimeConfig || runtimeName(node));
+    metadataRow(metadata,t('recordedStatus'),history.status || t('statusUnknown'));
+    metadataRow(metadata,t('originalCreated'),fullDate(node.createdAt));
+    metadataRow(metadata,t('updated'),fullDate(history.updatedAt));
+    metadataRow(metadata,t('source'),history.source);
+    metadataRow(metadata,t('originalSession'),history.sessionId);
+    if (history.cwd) metadataRow(metadata,t('workingDirectory'),history.cwd,true);
+    text($('history-summary'),history.summary || t('noSummary'));
+    const evidence = $('history-evidence'); evidence.replaceChildren();
+    if (history.references?.length) {
+      for (const reference of history.references) metadataRow(evidence,reference.label,reference.value);
+    } else { const missing = document.createElement('p'); missing.className='field-hint'; missing.textContent=t('noEvidence'); evidence.append(missing); }
+    const lineage = $('history-lineage'); lineage.replaceChildren();
+    const relationships = state.edges.filter(edge => edge.source === node.id || edge.target === node.id);
+    if (!relationships.length) { const missing = document.createElement('p'); missing.className='field-hint'; missing.textContent=t('noLineage'); lineage.append(missing); }
+    for (const edge of relationships) {
+      const incoming = edge.target === node.id, otherID = incoming ? edge.source : edge.target, other = nodeFor(otherID);
+      const row = document.createElement('div'); row.className='lineage-row';
+      const button = document.createElement('button'); button.type='button';
+      button.textContent=`${t(incoming ? 'from' : 'to')} ${other.title} · ${t(edge.kind === 'created_from' ? 'createdFrom' : edge.kind)}`;
+      button.addEventListener('click',() => {
+        $('history-search').value=''; $('include-workers').checked=true; focusNode(otherID); renderSearch();
+        if (other.history) { historyID=otherID; renderHistory(); } else { $('history-dialog').close(); openSession(otherID); }
+      });
+      row.append(button);
+      if (edge.evidence) { const proof = document.createElement('p'); proof.textContent=edge.evidence; row.append(proof); }
+      lineage.append(row);
+    }
+    $('history-resume').disabled=resumeBusy || !(node.available || node.canResume);
+    text($('history-resume'),t(resumeBusy ? 'resuming' : node.available ? 'openTerminal' : 'resume'));
+    text($('history-resume-hint'),node.available || node.canResume ? t('historicalHint') : node.resumeUnavailableReason || t('resumeUnavailable'));
+  }
+  function showHistory(id) {
+    historyID=id; renderHistory(); $('search-results').hidden=true;
+    if (!$('history-dialog').open) $('history-dialog').showModal();
+    renderEdges();
+  }
+  $('history-resume').addEventListener('click',async () => {
+    const node=nodeFor(historyID); if (!node || resumeBusy || !(node.available || node.canResume)) return;
+    resumeBusy=true; $('history-dialog').close();
+    try { receive(await client.send(node.available ? 'session.open' : 'session.resume',{id:node.id})); }
+    catch(error) { showHistory(node.id); notify(errorMessage(error)); }
+    finally { resumeBusy=false; if ($('history-dialog').open) renderHistory(); }
+  });
+  $('history-dialog').addEventListener('close',() => { if (!resumeBusy && !$('history-dialog').open) historyID=null; if (state) renderEdges(); });
+  $('history-search').addEventListener('input',() => { hideMenu(); renderGraph(); renderSearch(); });
+  $('history-search').addEventListener('focus',renderSearch);
+  $('include-workers').addEventListener('change',() => { hideMenu(); renderGraph(); renderSearch(); });
+  window.addEventListener('resize',() => { if (state) renderGraph(); });
   function hideMenu() { $('node-menu').hidden = true; menuID = null; }
   function showMenu(id, button) {
     menuID = id; const rect = button.getBoundingClientRect(), menu = $('node-menu');
@@ -213,6 +316,7 @@
     busyCreate(true); formError('create-error');
     try {
       const result = await client.create(params); receive(result.snapshot);
+      $('history-search').value=''; renderGraph(); renderSearch(); focusNode(result.nodeId);
       $('create-dialog').close(); client.resetCreate(); notify(t('created'));
       // Closing the web dialog may change focus; make the native terminal the final owner.
       await openSession(result.nodeId, true);

@@ -6,6 +6,7 @@ struct OMGCanvasBridgeRequest: Decodable {
         case snapshot = "canvas.snapshot"
         case create = "session.create"
         case open = "session.open"
+        case resume = "session.resume"
         case dismiss = "session.dismiss"
         case positions = "canvas.setPositions"
         case link = "canvas.link"
@@ -20,7 +21,7 @@ struct OMGCanvasBridgeRequest: Decodable {
         var positions: [Position]?
         var viewport: OMGCanvasGraph.Viewport?
     }
-    enum Failure: Error { case invalid, unavailable, missingRuntime, createFailed, inactive }
+    enum Failure: Error { case invalid, unavailable, missingRuntime, createFailed, inactive, historyUnavailable }
     let version: Int
     let id: UUID
     let method: Method
@@ -29,7 +30,7 @@ struct OMGCanvasBridgeRequest: Decodable {
     init(body: Any) throws {
         guard JSONSerialization.isValidJSONObject(body) else { throw Failure.invalid }
         let data = try JSONSerialization.data(withJSONObject: body)
-        guard data.count <= 256 * 1024 else { throw Failure.invalid }
+        guard data.count <= 2 * 1024 * 1024 else { throw Failure.invalid }
         self = try JSONDecoder().decode(Self.self, from: data)
         guard version == 1 else { throw Failure.invalid }
         if method == .create {

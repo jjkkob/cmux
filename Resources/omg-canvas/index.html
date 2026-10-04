@@ -21,9 +21,14 @@
     <div class="brand"><span class="brand-mark">omg</span><span class="brand-divider"></span><span id="workspace-title" data-i18n="canvas"></span></div>
     <button id="create-button" class="primary"><span class="plus" aria-hidden="true">+</span><span data-i18n="newSession"></span></button>
   </header>
+  <section id="history-tools" class="history-tools floating" hidden>
+    <input id="history-search" type="search" data-i18n-label="searchSessions" autocomplete="off">
+    <label class="worker-filter"><input id="include-workers" type="checkbox"><span data-i18n="includeWorkers"></span></label>
+    <div id="search-results" class="search-results" hidden><span id="search-result-count" class="field-hint"></span><div id="search-result-list"></div></div>
+  </section>
   <aside class="canvas-status floating" role="status"><span id="connection-dot" class="status-dot"></span><span id="connection-label" data-i18n="connecting"></span><span class="status-divider"></span><span id="node-count"></span></aside>
   <div id="connection-error" class="connection-error floating" hidden><span></span><button id="retry-button" class="text-button" data-i18n="retry"></button></div>
-  <footer class="canvas-footer"><span class="gesture-hint" data-i18n="gestures"></span></footer>
+  <footer class="canvas-footer"><span class="gesture-hint" data-i18n="gestures"></span><span id="filter-hint" class="gesture-hint"></span></footer>
   <div id="toast" class="toast" role="status" hidden></div>
   <div id="node-menu" class="node-menu floating" hidden><button id="menu-link" data-i18n="connectSession"></button></div>
   <dialog id="create-dialog" class="form-dialog" aria-labelledby="create-title"><form id="create-form">
@@ -41,6 +46,16 @@
     <p class="field-hint" data-i18n="linkBody"></p><p id="link-error" class="form-error" role="alert" hidden></p>
     <footer class="dialog-actions"><button type="button" class="secondary" data-close="link-dialog" data-i18n="cancel"></button><button id="link-submit" type="submit" class="primary" data-i18n="addConnection"></button></footer>
   </form></dialog>
+  <dialog id="history-dialog" class="history-dialog" aria-labelledby="history-title">
+    <header class="dialog-header"><div><span id="history-eyebrow" class="eyebrow" data-i18n="history"></span><h2 id="history-title"></h2></div><button type="button" class="icon-button" data-close="history-dialog" data-i18n-label="close">×</button></header>
+    <div class="history-scroll">
+      <dl id="history-metadata" class="history-metadata"></dl>
+      <section class="history-section"><h3 data-i18n="summary"></h3><p id="history-summary"></p></section>
+      <section class="history-section"><h3 data-i18n="lineage"></h3><div id="history-lineage"></div></section>
+      <details class="history-section"><summary data-i18n="evidence"></summary><dl id="history-evidence"></dl></details>
+    </div>
+    <footer class="history-actions"><p id="history-resume-hint" class="field-hint"></p><button id="history-resume" class="primary" data-i18n="resume"></button></footer>
+  </dialog>
   <script src="messages.js"></script><script src="bridge.js"></script><script src="app.js"></script>
 </body>
 </html>
