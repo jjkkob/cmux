@@ -29,7 +29,7 @@
   }
   function connection(error = null) {
     $('connection-dot').className = `status-dot ${error ? 'error' : 'connected'}`;
-    text($('connection-label'), error ? t('unavailable') : t('connected'));
+    text($('connection-label'), error ? t('unavailable') : t(state?.nodes.some(node => node.history) ? 'history' : 'connected'));
     $('connection-error').hidden = !error;
     $('connection-error').querySelector('span').textContent = error ? errorMessage(error) : '';
     $('create-button').disabled = !!error || !state;
@@ -106,8 +106,12 @@
   }
   function focusNode(id) {
     const node = nodeFor(id); if (!node) return;
+    const controls = [...document.querySelectorAll('#toolbar,#history-tools,.canvas-status')].filter(element => !element.hidden);
+    const top = Math.max(0,...controls.map(element => element.getBoundingClientRect().bottom)) + 24;
+    const bottom = document.querySelector('.canvas-footer').getBoundingClientRect().top - 20;
+    const centerY = Math.max(top + 77 * view.scale,(top + bottom) / 2);
     view.x = window.innerWidth / 2 - (node.x + 129) * view.scale;
-    view.y = window.innerHeight / 2 - (node.y + 77) * view.scale;
+    view.y = centerY - (node.y + 77) * view.scale;
     viewGeneration++; renderGraph(); applyView(); scheduleLayout();
   }
   function renderNodes() {
