@@ -3106,5 +3106,53 @@
       "es": "The standard pixel unit abbreviation px is invariant; the localized entry preserves the numeric placeholder.",
       "ja": "The standard pixel unit abbreviation px is invariant; the localized entry preserves the numeric placeholder."
     }
+  },
+  "omg.chatPreview.conversation": {
+    "source": "Conversation",
+    "identityLocales": {
+      "fr": "Reviewed native French spelling shared with English; the translated entry remains required."
+    }
+  },
+  "omg.chatPreview.assistant": {
+    "source": "Assistant",
+    "identityLocales": {
+      "fr": "Reviewed native French spelling shared with English; the translated entry remains required."
+    }
+  },
+  "omg.chatPreview.fixtureCode.file": {
+    "source": "EmptyState.swift",
+    "class": "syntax",
+    "reason": "Synthetic Swift filename or code displayed verbatim in the sample diff; translating code would change the example syntax."
+  },
+  "omg.chatPreview.fixtureCode.declaration": {
+    "source": "  struct EmptyState {",
+    "class": "syntax",
+    "reason": "Synthetic Swift filename or code displayed verbatim in the sample diff; translating code would change the example syntax."
+  },
+  "omg.chatPreview.fixtureCode.spacingBefore": {
+    "source": "−     let spacing = 16",
+    "class": "syntax",
+    "reason": "Synthetic Swift filename or code displayed verbatim in the sample diff; translating code would change the example syntax."
+  },
+  "omg.chatPreview.fixtureCode.spacingAfter": {
+    "source": "+     let spacing = 24",
+    "class": "syntax",
+    "reason": "Synthetic Swift filename or code displayed verbatim in the sample diff; translating code would change the example syntax."
+  },
+  "omg.chatPreview.fixtureCode.primaryAction": {
+    "source": "+     let isPrimaryActionVisible = true",
+    "class": "syntax",
+    "reason": "Synthetic Swift filename or code displayed verbatim in the sample diff; translating code would change the example syntax."
+  },
+  "omg.chatPreview.fixtureCode.closingBrace": {
+    "source": "  }",
+    "class": "syntax",
+    "reason": "Synthetic Swift filename or code displayed verbatim in the sample diff; translating code would change the example syntax."
+  },
+  "omg.chat.message": {
+    "source": "Message…",
+    "identityLocales": {
+      "fr": "Message is the natural French UI noun and shares the English spelling; a translated entry is still required."
+    }
   }
 }
