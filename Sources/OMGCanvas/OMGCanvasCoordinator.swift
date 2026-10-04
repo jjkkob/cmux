@@ -19,6 +19,7 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
     private var historyIdentity: [String] = []
     private var historyLoad: Task<Void, Never>?
     private var runtimeLaunches: [String: OMGCanvasRuntimeResolver.Launch] = [:]
+    private var previewTerminalTarget: (nodeID: UUID, surfaceID: UUID)?
 
     init(workspace: Workspace, resourceURL: URL?) {
         self.workspace = workspace
@@ -75,6 +76,7 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         if let surface = state.presentedSurfaceId, workspace.panels[surface] as? TerminalPanel == nil {
             dismiss()
         }
+        host?.updatePreviewTerminalAvailability(previewTerminalIsAvailable)
         refreshHistoryAvailability()
     }
 
@@ -130,6 +132,8 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         case .open:
             guard let id = request.params.id else { throw OMGCanvasBridgeRequest.Failure.invalid }
             try open(id)
+        case .preview:
+            try openPreview(request.params.id)
         case .dismiss:
             dismiss()
         case .create:
@@ -232,10 +236,33 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         try open(id)
     }
 
-    private func open(_ id: UUID) throws {
+    private var previewTerminalIsAvailable: Bool {
+        guard let workspace, let target = previewTerminalTarget else { return false }
+        return workspace.omgCanvasState.graph.nodes.contains(where: { $0.id == target.nodeID && $0.surfaceId == target.surfaceID })
+            && workspace.panels[target.surfaceID] is TerminalPanel
+    }
+
+    private func openPreview(_ id: UUID?) throws {
+        guard active, let workspace, let host, workspace.omgCanvasState.enabled else { throw OMGCanvasBridgeRequest.Failure.inactive }
+        let node = id.flatMap { id in workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }) }
+        guard id == nil || node != nil else { throw OMGCanvasBridgeRequest.Failure.invalid }
+        dismiss(focusCanvas: false)
+        let model = try workspace.omgCanvasState.presentChatPreview(nodeID: id)
+        if let node, let surfaceID = node.surfaceId, workspace.panels[surfaceID] is TerminalPanel {
+            previewTerminalTarget = (node.id, surfaceID)
+        }
+        host.presentPreview(model: model, title: node?.title ?? String(localized: "omg.chatPreview.chatPreview", defaultValue: "Chat preview"), runtime: node?.runtime, canOpenTerminal: previewTerminalIsAvailable) { [weak self] in
+            guard let self, self.previewTerminalIsAvailable, let target = self.previewTerminalTarget else { return }
+            try? self.open(target.nodeID, expectedSurfaceID: target.surfaceID, returnToPreview: true)
+            self.push()
+        }
+    }
+
+    private func open(_ id: UUID, expectedSurfaceID: UUID? = nil, returnToPreview: Bool = false) throws {
         guard active, let workspace, let host,
               let node = workspace.omgCanvasState.graph.nodes.first(where: { $0.id == id }),
               let surfaceId = node.surfaceId, let panel = workspace.panels[surfaceId] as? TerminalPanel else { throw OMGCanvasBridgeRequest.Failure.unavailable }
+        guard expectedSurfaceID == nil || expectedSurfaceID == surfaceId else { throw OMGCanvasBridgeRequest.Failure.unavailable }
         dismiss(focusCanvas: false)
         let state = workspace.omgCanvasState
         state.selectedId = id
@@ -243,12 +270,18 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
         state.changed()
         AppDelegate.shared?.noteMainPanelKeyboardFocusIntent(workspaceId: workspace.id, panelId: surfaceId, in: host.window)
         workspace.focusPanel(surfaceId)
-        host.present(panel, title: node.title) { [weak workspace] panelId in workspace?.focusPanel(panelId) }
+        let back: (() -> Void)? = returnToPreview ? { [weak self] in
+            try? self?.openPreview(id)
+            self?.push()
+        } : nil
+        host.present(panel, title: node.title, onBackToPreview: back) { [weak workspace] panelId in workspace?.focusPanel(panelId) }
     }
 
     private func dismiss(focusCanvas: Bool = true) {
         guard let workspace else { return }
         host?.dismiss(focusCanvas: focusCanvas && active)
+        previewTerminalTarget = nil
+        workspace.omgCanvasState.dismissChatPreview()
         if workspace.omgCanvasState.presentedSurfaceId != nil {
             workspace.omgCanvasState.presentedSurfaceId = nil
             workspace.omgCanvasState.changed()
@@ -266,7 +299,8 @@ final class OMGCanvasCoordinator: NSObject, WKScriptMessageHandlerWithReply, WKN
             revision: state.revision, locale: Locale.current.identifier,
             workspace: .init(id: workspace.id, title: workspace.title), nodes: nodes, edges: state.graph.edges,
             selectedId: state.selectedId, terminalOpen: state.presentedSurfaceId != nil, viewport: state.graph.viewport,
-            runtimes: ["shell", "python", "codex", "claude"].map { .init(id: $0, label: $0, available: runtimeLaunches[$0] != nil && !workspace.isRemoteWorkspace) }
+            runtimes: ["shell", "python", "codex", "claude"].map { .init(id: $0, label: $0, available: runtimeLaunches[$0] != nil && !workspace.isRemoteWorkspace) },
+            previewOpen: state.isChatPreviewPresented
         )
         return (try? payload.dictionary()) ?? [:]
     }

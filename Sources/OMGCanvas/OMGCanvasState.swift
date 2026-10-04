@@ -12,6 +12,32 @@ final class OMGCanvasState {
     @ObservationIgnored var refreshPresentation: (() -> Void)?
     @ObservationIgnored var dismissPresentation: (() -> Void)?
     var requestedOpenId: UUID?
+    private(set) var isChatPreviewPresented = false
+    private(set) var presentedPreviewNodeID: UUID?
+    @ObservationIgnored private var chatPreviews: [String: OMGCanvasChatPreviewModel] = [:]
+
+    /// Preview identity is presentation-only and never creates or resumes a graph session.
+    func presentChatPreview(nodeID: UUID?) throws -> OMGCanvasChatPreviewModel {
+        if let nodeID, !graph.nodes.contains(where: { $0.id == nodeID }) {
+            throw OMGCanvasBridgeRequest.Failure.invalid
+        }
+        let key = nodeID.map { "node:\($0.uuidString)" } ?? "workspace"
+        let model = chatPreviews[key] ?? OMGCanvasChatPreviewModel()
+        chatPreviews[key] = model
+        presentedPreviewNodeID = nodeID
+        isChatPreviewPresented = true
+        presentedSurfaceId = nil
+        if let nodeID { selectedId = nodeID }
+        changed()
+        return model
+    }
+
+    func dismissChatPreview() {
+        guard isChatPreviewPresented else { return }
+        isChatPreviewPresented = false
+        presentedPreviewNodeID = nil
+        changed()
+    }
 
     func changed() { revision &+= 1 }
 
@@ -22,6 +48,9 @@ final class OMGCanvasState {
         selectedId = nil
         requestedOpenId = nil
         presentedSurfaceId = nil
+        isChatPreviewPresented = false
+        presentedPreviewNodeID = nil
+        chatPreviews.removeAll()
         changed()
     }
 

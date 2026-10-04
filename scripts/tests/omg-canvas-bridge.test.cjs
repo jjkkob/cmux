@@ -9,6 +9,48 @@ const messages = require(path.join(resources, 'messages.js'));
 const fixture = require(path.join(resources, 'bridge-fixture.json'));
 const clone = value => JSON.parse(JSON.stringify(value));
 
+test('workspace and node preview requests match the native fixture and retain its graph', async () => {
+  for (const request of [fixture.previewRequest, fixture.nodePreviewRequest]) {
+    const sent = [];
+    let current;
+    const receive = bridge.createStateReceiver(state => { current = state; });
+    const client = bridge.createClient(async body => {
+      sent.push(body);
+      return {ok: true, value: clone(fixture.previewSnapshot)};
+    }, () => request.id);
+    receive(await client.send(request.method, clone(request.params)));
+    assert.deepEqual(sent, [request]);
+    assert.equal(current.previewOpen, true);
+    assert.equal(current.terminalOpen, false);
+    assert.deepEqual(current.nodes, fixture.previewSnapshot.nodes);
+    assert.deepEqual(current.edges, fixture.previewSnapshot.edges);
+    assert.deepEqual(current.viewport, fixture.previewSnapshot.viewport);
+    if (request.params.id) assert.ok(current.nodes.some(node => node.id === request.params.id));
+  }
+});
+
+test('preview rejects dispatch parameters and invalid identity types before transport', () => {
+  let calls = 0;
+  const client = bridge.createClient(() => { calls++; }, () => fixture.previewRequest.id);
+  for (const params of [{runtime: 'codex'}, {command: 'must not run'}, {title: 'A new node'},
+    {id: null}, {id: ''}, {id: 123}, {id: {}}, {id: []}]) {
+    assert.throws(() => client.send('session.preview', params), error => error.code === 'invalid_request');
+  }
+  assert.equal(calls, 0);
+});
+
+test('preview visibility is additive and never reclassifies a real terminal as preview', () => {
+  const legacy = clone(fixture.previewSnapshot);
+  delete legacy.previewOpen;
+  legacy.terminalOpen = true;
+  const terminal = bridge.snapshot(legacy);
+  assert.equal(terminal.previewOpen, false);
+  assert.equal(terminal.terminalOpen, true);
+  for (const invalid of ['true', 1, {}]) {
+    assert.throws(() => bridge.snapshot({...fixture.previewSnapshot, previewOpen: invalid}), error => error.code === 'invalid_snapshot');
+  }
+});
+
 test('native create remains standalone when another node was selected', async () => {
   const sent = [];
   let current;

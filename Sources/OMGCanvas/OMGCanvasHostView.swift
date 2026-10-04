@@ -1,5 +1,6 @@
 import AppKit
 import WebKit
+import SwiftUI
 
 /// An unscaled native terminal window above a separately zoomable web canvas.
 @MainActor
@@ -9,6 +10,9 @@ final class OMGCanvasHostView: NSView {
     private let terminalContainer = NSView()
     private let titleLabel = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
+    private let backButton = NSButton()
+    private var chatHost: NSHostingView<OMGCanvasChatPreviewView>?
+    private var onBackToPreview: (() -> Void)?
     private var mount: CanvasPaneContentMount?
     private weak var mountedPanel: TerminalPanel?
     var onDismiss: (() -> Void)?
@@ -34,6 +38,13 @@ final class OMGCanvasHostView: NSView {
         closeButton.action = #selector(dismissClicked)
         closeButton.toolTip = String(localized: "omg.canvas.dismissHint", defaultValue: "Return to canvas. The session keeps running.")
         sessionWindow.addSubview(closeButton)
+        backButton.image = NSImage(systemSymbolName: "arrow.left", accessibilityDescription: String(localized: "omg.chatPreview.back", defaultValue: "Back to preview"))
+        backButton.bezelStyle = .texturedRounded
+        backButton.target = self
+        backButton.action = #selector(backClicked)
+        backButton.toolTip = String(localized: "omg.chatPreview.back", defaultValue: "Back to preview")
+        backButton.isHidden = true
+        sessionWindow.addSubview(backButton)
         addSubview(sessionWindow)
         sessionWindow.isHidden = true
     }
@@ -43,20 +54,29 @@ final class OMGCanvasHostView: NSView {
     override func layout() {
         super.layout()
         webView.frame = bounds
-        let size = NSSize(width: max(180, min(1100, bounds.width - 64)), height: max(160, min(780, bounds.height - 88)))
+        let isPreview = chatHost != nil
+        let size = NSSize(width: max(180, min(isPreview ? 860 : 1100, bounds.width - (isPreview ? 40 : 64))), height: max(160, min(780, bounds.height - (isPreview ? 40 : 88))))
         sessionWindow.frame = NSRect(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2, width: size.width, height: size.height)
         terminalContainer.frame = NSRect(x: 1, y: 1, width: size.width - 2, height: size.height - 53)
-        titleLabel.frame = NSRect(x: 18, y: size.height - 35, width: max(20, size.width - 80), height: 20)
+        let titleX: CGFloat = onBackToPreview == nil ? 18 : 54
+        titleLabel.frame = NSRect(x: titleX, y: size.height - 35, width: max(20, size.width - titleX - 62), height: 20)
         closeButton.frame = NSRect(x: size.width - 46, y: size.height - 42, width: 30, height: 30)
+        backButton.frame = NSRect(x: 12, y: size.height - 42, width: 30, height: 30)
+        chatHost?.frame = sessionWindow.bounds
     }
 
-    func present(_ panel: TerminalPanel, title: String, onFocus: @escaping (UUID) -> Void) {
+    func present(_ panel: TerminalPanel, title: String, onBackToPreview: (() -> Void)? = nil, onFocus: @escaping (UUID) -> Void) {
         titleLabel.stringValue = title
         if mountedPanel === panel {
             panel.focus()
             return
         }
         dismiss(focusCanvas: false)
+        self.onBackToPreview = onBackToPreview
+        backButton.isHidden = onBackToPreview == nil
+        titleLabel.isHidden = false
+        closeButton.isHidden = false
+        terminalContainer.isHidden = false
         sessionWindow.isHidden = false
         needsLayout = true
         layoutSubtreeIfNeeded()
@@ -71,6 +91,29 @@ final class OMGCanvasHostView: NSView {
         panel.focus()
     }
 
+    func presentPreview(model: OMGCanvasChatPreviewModel, title: String, runtime: String?, canOpenTerminal: Bool, onOpenTerminal: @escaping () -> Void) {
+        dismiss(focusCanvas: false)
+        titleLabel.isHidden = true
+        closeButton.isHidden = true
+        terminalContainer.isHidden = true
+        let content = OMGCanvasChatPreviewView(model: model, title: title, runtime: runtime, canOpenTerminal: canOpenTerminal, onOpenTerminal: onOpenTerminal, onClose: { [weak self] in self?.onDismiss?() })
+        let hostingView = NSHostingView(rootView: content)
+        hostingView.appearance = NSAppearance(named: .darkAqua)
+        chatHost = hostingView
+        sessionWindow.addSubview(hostingView)
+        sessionWindow.isHidden = false
+        needsLayout = true
+        layoutSubtreeIfNeeded()
+        // NSHostingView may decline first responder. Clear a prior terminal first.
+        window?.makeFirstResponder(nil)
+        window?.makeFirstResponder(hostingView)
+    }
+
+    func updatePreviewTerminalAvailability(_ available: Bool) {
+        guard let chatHost, chatHost.rootView.canOpenTerminal != available else { return }
+        chatHost.rootView.canOpenTerminal = available
+    }
+
     func dismiss(focusCanvas: Bool) {
         mountedPanel?.unfocus()
         mount?.unmount()
@@ -78,9 +121,14 @@ final class OMGCanvasHostView: NSView {
         mountedPanel?.surface.applyVisibilityOcclusion(false)
         mount = nil
         mountedPanel = nil
+        chatHost?.removeFromSuperview()
+        chatHost = nil
+        onBackToPreview = nil
+        backButton.isHidden = true
         sessionWindow.isHidden = true
         if focusCanvas { window?.makeFirstResponder(webView) }
     }
 
     @objc private func dismissClicked() { onDismiss?() }
+    @objc private func backClicked() { onBackToPreview?() }
 }

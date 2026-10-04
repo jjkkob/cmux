@@ -38,6 +38,9 @@
   const observationLabels = {"en": "Observation", "de": "Beobachtung", "fr": "Observation", "ar": "رصد", "es": "Observación", "zh-Hant": "觀測記錄", "zh-Hans": "观测记录", "ko": "관찰 기록", "ja": "観測記録"};
   for (const [locale,label] of Object.entries(observationLabels)) catalogs[locale].roleObservation=label;
   keys.push('roleObservation');
+  const chatPreviewLabels = {"en": "Chat preview", "de": "Chat-Vorschau", "fr": "Aperçu du chat", "ar": "معاينة المحادثة", "es": "Vista previa del chat", "zh-Hant": "聊天預覽", "zh-Hans": "聊天预览", "ko": "채팅 미리보기", "ja": "チャットプレビュー"};
+  for (const [locale, label] of Object.entries(chatPreviewLabels)) catalogs[locale].chatPreview = label;
+  keys.push('chatPreview');
   function localeFor(value) {
     const language = String(value || 'en').replaceAll('_', '-');
     if (/^zh-(TW|HK|MO|Hant)/i.test(language)) return 'zh-Hant';

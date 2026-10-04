@@ -449,5 +449,71 @@
     "params": {
       "id": "00000001-1111-4111-8111-000000000001"
     }
+  },
+  "previewRequest": {
+    "version": 1,
+    "id": "fe5723c7-bff3-4d75-a86c-62a350ea7d73",
+    "method": "session.preview",
+    "params": {}
+  },
+  "nodePreviewRequest": {
+    "version": 1,
+    "id": "e81bf095-4329-45e8-b26a-716cbbe52123",
+    "method": "session.preview",
+    "params": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  "previewSnapshot": {
+    "version": 1,
+    "revision": 7,
+    "locale": "en_US",
+    "workspace": {
+      "id": "CCCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC",
+      "title": "OMG prototype"
+    },
+    "nodes": [
+      {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "surfaceId": "DDDDDDDD-DDDD-4DDD-8DDD-DDDDDDDDDDDD",
+        "title": "Shell",
+        "runtime": "unknown",
+        "createdAt": "2026-10-03T20:00:00Z",
+        "x": 100,
+        "y": 130,
+        "available": true
+      }
+    ],
+    "edges": [],
+    "selectedId": "11111111-1111-4111-8111-111111111111",
+    "terminalOpen": false,
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "scale": 1
+    },
+    "runtimes": [
+      {
+        "id": "shell",
+        "label": "shell",
+        "available": true
+      },
+      {
+        "id": "python",
+        "label": "python",
+        "available": true
+      },
+      {
+        "id": "codex",
+        "label": "codex",
+        "available": true
+      },
+      {
+        "id": "claude",
+        "label": "claude",
+        "available": true
+      }
+    ],
+    "previewOpen": true
   }
 }

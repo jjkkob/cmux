@@ -13,3 +13,7 @@ body.terminal-open::after{content:"";position:fixed;inset:0;background:#27351f25
 @media(max-width:1000px){.history-tools{top:148px}}@media(max-width:600px){.history-tools{left:12px;top:130px;width:calc(100vw - 24px);gap:8px}.worker-filter{font-size:10px}.history-dialog{width:calc(100vw - 24px);padding:20px;max-height:calc(100dvh - 24px)}.history-metadata{grid-template-columns:1fr}.history-metadata .wide{grid-column:auto}.history-actions{align-items:flex-start;flex-direction:column;gap:12px}}
 
 #filter-hint:not(:empty){margin-inline-start:20px;color:#787f6e}
+
+/* Keep the preview entry point available beside session creation on compact canvases. */
+.toolbar{gap:12px;max-width:760px}.toolbar .brand{flex:1}.toolbar>button{flex:none}
+@media(max-width:680px){.toolbar{left:12px;right:12px;padding-inline:14px;gap:8px}.toolbar .brand-divider,.toolbar #workspace-title{display:none}.toolbar>button{padding-inline:10px}.canvas-status{top:auto;bottom:48px;right:12px}.history-actions{flex-wrap:wrap}.history-actions .field-hint{flex-basis:100%}}

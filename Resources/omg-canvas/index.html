@@ -19,6 +19,7 @@
   </main>
   <header id="toolbar" class="toolbar floating">
     <div class="brand"><span class="brand-mark">omg</span><span class="brand-divider"></span><span id="workspace-title" data-i18n="canvas"></span></div>
+    <button id="preview-button" class="secondary" data-i18n="chatPreview"></button>
     <button id="create-button" class="primary"><span class="plus" aria-hidden="true">+</span><span data-i18n="newSession"></span></button>
   </header>
   <section id="history-tools" class="history-tools floating" hidden>
@@ -30,7 +31,7 @@
   <div id="connection-error" class="connection-error floating" hidden><span></span><button id="retry-button" class="text-button" data-i18n="retry"></button></div>
   <footer class="canvas-footer"><span class="gesture-hint" data-i18n="gestures"></span><span id="filter-hint" class="gesture-hint"></span></footer>
   <div id="toast" class="toast" role="status" hidden></div>
-  <div id="node-menu" class="node-menu floating" hidden><button id="menu-link" data-i18n="connectSession"></button></div>
+  <div id="node-menu" class="node-menu floating" hidden><button id="menu-preview" data-i18n="chatPreview"></button><button id="menu-link" data-i18n="connectSession"></button></div>
   <dialog id="create-dialog" class="form-dialog" aria-labelledby="create-title"><form id="create-form">
     <header class="dialog-header"><div><span class="eyebrow" data-i18n="session"></span><h2 id="create-title" data-i18n="createTitle"></h2></div><button type="button" class="icon-button" data-close="create-dialog" data-i18n-label="close">×</button></header>
     <p id="create-context" class="dialog-description" data-i18n="createBody"></p>
@@ -54,7 +55,7 @@
       <section class="history-section"><h3 data-i18n="lineage"></h3><div id="history-lineage"></div></section>
       <details class="history-section"><summary data-i18n="evidence"></summary><dl id="history-evidence"></dl></details>
     </div>
-    <footer class="history-actions"><p id="history-resume-hint" class="field-hint"></p><button id="history-resume" class="primary" data-i18n="resume"></button></footer>
+    <footer class="history-actions"><p id="history-resume-hint" class="field-hint"></p><button id="history-preview" class="secondary" data-i18n="chatPreview"></button><button id="history-resume" class="primary" data-i18n="resume"></button></footer>
   </dialog>
   <script src="messages.js"></script><script src="bridge.js"></script><script src="app.js"></script>
 </body>

@@ -26,6 +26,39 @@ struct OMGCanvasSnapshot: Codable {
     var terminalOpen: Bool
     var viewport: OMGCanvasGraph.Viewport
     var runtimes: [Runtime]
+    var previewOpen = false
+
+    init(revision: Int, locale: String, workspace: WorkspaceInfo, nodes: [Node], edges: [OMGCanvasGraph.Edge], selectedId: UUID?, terminalOpen: Bool, viewport: OMGCanvasGraph.Viewport, runtimes: [Runtime], previewOpen: Bool = false) {
+        self.revision = revision
+        self.locale = locale
+        self.workspace = workspace
+        self.nodes = nodes
+        self.edges = edges
+        self.selectedId = selectedId
+        self.terminalOpen = terminalOpen
+        self.viewport = viewport
+        self.runtimes = runtimes
+        self.previewOpen = previewOpen
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case version, revision, locale, workspace, nodes, edges, selectedId, terminalOpen, viewport, runtimes, previewOpen
+    }
+
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        version = try values.decode(Int.self, forKey: .version)
+        revision = try values.decode(Int.self, forKey: .revision)
+        locale = try values.decode(String.self, forKey: .locale)
+        workspace = try values.decode(WorkspaceInfo.self, forKey: .workspace)
+        nodes = try values.decode([Node].self, forKey: .nodes)
+        edges = try values.decode([OMGCanvasGraph.Edge].self, forKey: .edges)
+        selectedId = try values.decodeIfPresent(UUID.self, forKey: .selectedId)
+        terminalOpen = try values.decode(Bool.self, forKey: .terminalOpen)
+        viewport = try values.decode(OMGCanvasGraph.Viewport.self, forKey: .viewport)
+        runtimes = try values.decode([Runtime].self, forKey: .runtimes)
+        previewOpen = try values.decodeIfPresent(Bool.self, forKey: .previewOpen) ?? false
+    }
 
     func dictionary() throws -> [String: Any] {
         let data = try JSONEncoder().encode(self)

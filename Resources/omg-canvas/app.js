@@ -18,7 +18,7 @@
     return handler.postMessage(request);
   }, () => crypto.randomUUID());
   function errorMessage(error) {
-    if (['invalid_snapshot', 'invalid_reply'].includes(error.code)) return t('invalidState');
+    if (['invalid_snapshot', 'invalid_reply', 'invalid_request'].includes(error.code)) return t('invalidState');
     if (error.code === 'workspace_changed') return t('workspaceChanged');
     return error.message || t('invalidState');
   }
@@ -33,6 +33,7 @@
     $('connection-error').hidden = !error;
     $('connection-error').querySelector('span').textContent = error ? errorMessage(error) : '';
     $('create-button').disabled = !!error || !state;
+    $('preview-button').disabled = !!error || !state;
     $('empty-create').disabled = !!error || !state;
   }
   function localize() {
@@ -204,14 +205,15 @@
     renderRuntimes(); renderGraph(); renderSearch(); applyView(); connection();
     $('history-tools').hidden = !state.nodes.some(node => node.history);
     if (historyID && $('history-dialog').open) renderHistory();
-    if (state.terminalOpen) $('history-dialog').close();
-    canvas.inert = state.terminalOpen; $('toolbar').inert = state.terminalOpen;
-    document.body.classList.toggle('terminal-open', state.terminalOpen);
-    if (terminalWasOpen && !state.terminalOpen) {
+    const presentationOpen = state.terminalOpen || state.previewOpen;
+    if (presentationOpen) $('history-dialog').close();
+    canvas.inert = presentationOpen; $('toolbar').inert = presentationOpen; $('history-tools').inert = presentationOpen;
+    document.body.classList.toggle('terminal-open', presentationOpen);
+    if (terminalWasOpen && !presentationOpen) {
       const selected = [...$('nodes').children].find(node => node.dataset.id === state.selectedId);
       (selected?.querySelector('.node-open-hit') || canvas).focus({preventScroll: true});
     }
-    terminalWasOpen = state.terminalOpen;
+    terminalWasOpen = presentationOpen;
     if (menuID && !nodeFor(menuID)) hideMenu();
   });
   function receive(raw) { try { return accept(raw); } catch (error) { connection(error); throw error; } }
@@ -222,10 +224,17 @@
     finally { refreshBusy = false; }
   }
   async function openSession(id, refocus = false) {
-    if (drag || (state?.terminalOpen && !refocus)) return;
+    if (drag || ((state?.terminalOpen || state?.previewOpen) && !refocus)) return;
     hideMenu();
     if (nodeFor(id)?.history && !refocus) { showHistory(id); return; }
     try { receive(await client.send('session.open', {id})); }
+    catch (error) { notify(errorMessage(error)); }
+  }
+  async function openPreview(id) {
+    if (!state || state.terminalOpen || state.previewOpen) return;
+    hideMenu();
+    $('history-dialog').close();
+    try { receive(await client.send('session.preview', id ? {id} : {})); }
     catch (error) { notify(errorMessage(error)); }
   }
   function fullDate(value) {
@@ -297,7 +306,7 @@
     menu.hidden = false;
     menu.style.left = `${Math.max(12, Math.min(window.innerWidth - menu.offsetWidth - 12, rect.left))}px`;
     menu.style.top = `${Math.max(12, Math.min(window.innerHeight - menu.offsetHeight - 12, rect.bottom + 6))}px`;
-    $('menu-link').focus();
+    $('menu-preview').focus();
   }
   function openCreate() {
     hideMenu(); client.resetCreate(); $('create-form').reset(); formError('create-error');
@@ -343,20 +352,23 @@
     finally { $('link-submit').disabled = false; }
   });
   $('menu-link').addEventListener('click', () => openLink(menuID));
+  $('menu-preview').addEventListener('click', () => openPreview(menuID));
+  $('preview-button').addEventListener('click', () => openPreview());
+  $('history-preview').addEventListener('click', () => openPreview(historyID));
   $('create-button').addEventListener('click', () => openCreate()); $('empty-create').addEventListener('click', () => openCreate());
   $('retry-button').addEventListener('click', () => { refresh().then(() => saveLayout()); });
   document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $(button.dataset.close).close()));
   document.addEventListener('pointerdown', event => { if (!event.target.closest('#node-menu,.node-menu-button')) hideMenu(); });
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('node-menu').hidden) { const id = menuID; hideMenu(); [...$('nodes').children].find(node => node.dataset.id === id)?.querySelector('.node-menu-button').focus(); } });
   function startNodeDrag(event, id) {
-    if (event.button !== 0 || event.target.closest('.node-menu-button') || state?.terminalOpen) return;
+    if (event.button !== 0 || event.target.closest('.node-menu-button') || state?.terminalOpen || state?.previewOpen) return;
     const node = nodeFor(id); if (!node) return;
     event.preventDefault(); event.stopPropagation(); hideMenu();
     drag = {pointerID: event.pointerId, nodeId: id, x: event.clientX, y: event.clientY, originX: node.x, originY: node.y, position: {x: node.x, y: node.y}, moved: false, element: event.currentTarget};
     event.currentTarget.setPointerCapture(event.pointerId);
   }
   canvas.addEventListener('pointerdown', event => {
-    if (event.button !== 0 || event.target.closest('.session-node,button') || state?.terminalOpen) return;
+    if (event.button !== 0 || event.target.closest('.session-node,button') || state?.terminalOpen || state?.previewOpen) return;
     hideMenu(); canvas.focus({preventScroll: true});
     drag = {pointerID: event.pointerId, x: event.clientX, y: event.clientY, originX: view.x, originY: view.y, moved: false};
     canvas.setPointerCapture(event.pointerId); canvas.classList.add('dragging');
@@ -382,7 +394,7 @@
   }
   window.addEventListener('pointerup', endDrag); window.addEventListener('pointercancel', endDrag);
   canvas.addEventListener('wheel', event => {
-    if (!state || state.terminalOpen || document.querySelector('dialog[open]')) return;
+    if (!state || state.terminalOpen || state.previewOpen || document.querySelector('dialog[open]')) return;
     event.preventDefault(); hideMenu();
     if (event.ctrlKey) view = bridge.zoom(view, event.clientX, event.clientY, view.scale * Math.exp(-event.deltaY * .0025));
     else { const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1; view.x -= event.deltaX * unit; view.y -= event.deltaY * unit; }
