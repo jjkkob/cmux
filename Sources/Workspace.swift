@@ -187,6 +187,8 @@ extension Workspace {
             layout: layout,
             layoutMode: layoutMode.rawValue,
             canvasPanes: canvasSessionPaneSnapshots(),
+            omgCanvasGraph: omgCanvasState.graph.nodes.isEmpty ? nil : omgCanvasState.graph,
+            omgCanvasEnabled: omgCanvasState.enabled ? true : nil,
             panels: panelSnapshots,
             statusEntries: statusSnapshots,
             logEntries: logSnapshots,
@@ -366,6 +368,8 @@ extension Workspace {
         recomputeListeningPorts()
 
         restoreCanvasState(from: snapshot, oldToNewPanelIds: oldToNewPanelIds)
+        omgCanvasState.restore(snapshot.omgCanvasGraph, mapping: oldToNewPanelIds)
+        omgCanvasState.enabled = snapshot.omgCanvasEnabled == true
 
         if let focusedOldPanelId = snapshot.focusedPanelId,
            let focusedNewPanelId = oldToNewPanelIds[focusedOldPanelId],
@@ -2810,6 +2814,8 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
 
     /// Durable canvas-layout state (pane frames, z-order). Lives on the
     /// workspace so it survives canvas view remounts and workspace switches.
+    let omgCanvasState = OMGCanvasState()
+
     let canvasModel = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
     private struct SurfaceTabBarExecutableButton {
         let button: CmuxSurfaceTabBarButton
@@ -12318,6 +12324,9 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
 
     private func renderedVisiblePanelIdsForCurrentLayout() -> Set<UUID> {
         guard portalRenderingEnabled else { return [] }
+        if omgCanvasState.enabled {
+            return omgCanvasState.presentedSurfaceId.map { Set([$0]) } ?? []
+        }
         // Canvas mode renders one panel per canvas pane — its selected tab.
         // Background tabs are unmounted, so reporting them as rendered makes
         // the terminal window portal float them at stale frames (chromeless

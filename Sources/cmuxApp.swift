@@ -1176,6 +1176,12 @@ struct cmuxApp: App {
             paneSizingCommandButtons()
             Divider()
 
+            Button(String(localized: "omg.canvas.toggle", defaultValue: "Toggle OMG Session Canvas")) {
+                guard let workspace = activeTabManager.selectedWorkspace else { return }
+                workspace.setOMGCanvasEnabled(!workspace.omgCanvasState.enabled)
+            }
+            .disabled(activeTabManager.selectedWorkspace == nil)
+
             splitCommandButton(title: String(localized: "menu.view.toggleCanvasLayout", defaultValue: "Toggle Canvas Layout"), shortcut: menuShortcut(for: .toggleCanvasLayout)) {
                 guard let workspace = activeTabManager.selectedWorkspace else { return }
                 CanvasActionExecutor(workspace: workspace).perform(.toggleLayout)

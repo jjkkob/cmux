@@ -401,7 +401,9 @@ struct WorkspaceContentView: View {
         }
 
         Group {
-            if workspace.layoutMode == .canvas {
+            if workspace.omgCanvasState.enabled {
+                OMGCanvasView(workspace: workspace, isVisible: isWorkspaceVisible)
+            } else if workspace.layoutMode == .canvas {
                 WorkspaceCanvasHostView(
                     workspace: workspace,
                     isWorkspaceVisible: isWorkspaceVisible,

@@ -2293,6 +2293,16 @@
 		645645000000000000000002 /* NumberedShortcutSwapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 645645000000000000000001 /* NumberedShortcutSwapTests.swift */; };
 		7A0CE1000000000000000714 /* NWConnection+Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0CE1000000000000000713 /* NWConnection+Async.swift */; };
 		0A1107110000000000000001 /* OllamaAgentDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1107110000000000000002 /* OllamaAgentDetectionTests.swift */; };
+		8C3EE7C3494254D9137CAFB4 /* omg-canvas in Resources */ = {isa = PBXBuildFile; fileRef = 04E8619DEA79D377705711FF /* omg-canvas */; };
+		B79C546BDD410CCE29575E83 /* OMGCanvasBridgeRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6465B83FD30FE835525FF459 /* OMGCanvasBridgeRequest.swift */; };
+		65A55F6D2FC46BD8A7E379BB /* OMGCanvasBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711A07D616098139479AE4E8 /* OMGCanvasBridgeTests.swift */; };
+		54399EF29435C50B1A05E847 /* OMGCanvasCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D83389464F18D0140EF774D /* OMGCanvasCoordinator.swift */; };
+		5287A07E38053FA45762511A /* OMGCanvasGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7532042AFCD02B078CDBCFC3 /* OMGCanvasGraph.swift */; };
+		E1078F6DCA540E6ACAE7005A /* OMGCanvasHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62E406E86C95DD753412DC5 /* OMGCanvasHostView.swift */; };
+		303FA70A3D48F95D485CD58B /* OMGCanvasRuntimeResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A722EF1D1187E8E8508590C7 /* OMGCanvasRuntimeResolver.swift */; };
+		9F406A5F4FBBBCCB440F268A /* OMGCanvasSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B21D674A415CBF49178B8CC /* OMGCanvasSnapshot.swift */; };
+		B17AC27367C4E490EB8A97E8 /* OMGCanvasState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A40DEEE9AE0202B78CC367 /* OMGCanvasState.swift */; };
+		F6A856D1E4D0DFB4A90FA0AC /* OMGCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85C5A65AC13408B34F06B17 /* OMGCanvasView.swift */; };
 		C67540090000000000000001 /* OmnibarAddressButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C67540090000000000000002 /* OmnibarAddressButtonStyle.swift */; };
 		4378399A7C0245EF8186F306 /* OmnibarAndToolsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B09C007F42697761B5F1A2AB /* OmnibarAndToolsTests.swift */; };
 		9637C6D3170F4BE1A7EF6243 /* OmnibarSubmitDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48D6AE11906A4DF3BEB8CDFE /* OmnibarSubmitDecisionTests.swift */; };
@@ -3659,6 +3669,7 @@
 		C0DE1A050000000000000001 /* Workspace+LayoutCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE1A050000000000000002 /* Workspace+LayoutCapture.swift */; };
 		9504A0010000000000000001 /* Workspace+MovingTabSplit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9504A0010000000000000002 /* Workspace+MovingTabSplit.swift */; };
 		8B45A4329C234E6FB261E635 /* Workspace+NotificationsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688C3F45DAA548B3B57DE780 /* Workspace+NotificationsPane.swift */; };
+		B2BBAD19212F5488FA163CCC /* Workspace+OMGCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF2DE9BDD0089DFE9334F9F2 /* Workspace+OMGCanvas.swift */; };
 		1828BDC4C9B442F8A327FBFA /* Workspace+PanelCustomTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA836A743294BF0A7154177 /* Workspace+PanelCustomTitle.swift */; };
 		C3744E010000000000000001 /* Workspace+PanelLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3744E020000000000000001 /* Workspace+PanelLifecycle.swift */; };
 		6E105774324C4357B85DA653 /* Workspace+PanelTitleOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D51D04837340F896573F0B /* Workspace+PanelTitleOwnership.swift */; };
@@ -6116,6 +6127,16 @@
 		645645000000000000000001 /* NumberedShortcutSwapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberedShortcutSwapTests.swift; sourceTree = "<group>"; };
 		7A0CE1000000000000000713 /* NWConnection+Async.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "NWConnection+Async.swift"; sourceTree = "<group>"; };
 		0A1107110000000000000002 /* OllamaAgentDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaAgentDetectionTests.swift; sourceTree = "<group>"; };
+		04E8619DEA79D377705711FF /* omg-canvas */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "omg-canvas"; sourceTree = "<group>"; };
+		6465B83FD30FE835525FF459 /* OMGCanvasBridgeRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasBridgeRequest.swift"; sourceTree = "<group>"; };
+		711A07D616098139479AE4E8 /* OMGCanvasBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OMGCanvasBridgeTests.swift; sourceTree = "<group>"; };
+		5D83389464F18D0140EF774D /* OMGCanvasCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasCoordinator.swift"; sourceTree = "<group>"; };
+		7532042AFCD02B078CDBCFC3 /* OMGCanvasGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasGraph.swift"; sourceTree = "<group>"; };
+		C62E406E86C95DD753412DC5 /* OMGCanvasHostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasHostView.swift"; sourceTree = "<group>"; };
+		A722EF1D1187E8E8508590C7 /* OMGCanvasRuntimeResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasRuntimeResolver.swift"; sourceTree = "<group>"; };
+		6B21D674A415CBF49178B8CC /* OMGCanvasSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasSnapshot.swift"; sourceTree = "<group>"; };
+		56A40DEEE9AE0202B78CC367 /* OMGCanvasState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasState.swift"; sourceTree = "<group>"; };
+		A85C5A65AC13408B34F06B17 /* OMGCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OMGCanvasView.swift"; sourceTree = "<group>"; };
 		C67540090000000000000002 /* OmnibarAddressButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Panels/OmnibarAddressButtonStyle.swift; sourceTree = "<group>"; };
 		B09C007F42697761B5F1A2AB /* OmnibarAndToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmnibarAndToolsTests.swift; sourceTree = "<group>"; };
 		48D6AE11906A4DF3BEB8CDFE /* OmnibarSubmitDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmnibarSubmitDecisionTests.swift; sourceTree = "<group>"; };
@@ -7464,6 +7485,7 @@
 		C0DE1A050000000000000002 /* Workspace+LayoutCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Workspace+LayoutCapture.swift"; sourceTree = "<group>"; };
 		9504A0010000000000000002 /* Workspace+MovingTabSplit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Workspace+MovingTabSplit.swift"; sourceTree = "<group>"; };
 		688C3F45DAA548B3B57DE780 /* Workspace+NotificationsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Workspace+NotificationsPane.swift"; sourceTree = "<group>"; };
+		DF2DE9BDD0089DFE9334F9F2 /* Workspace+OMGCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Workspace+OMGCanvas.swift"; sourceTree = "<group>"; };
 		1DA836A743294BF0A7154177 /* Workspace+PanelCustomTitle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Workspace+PanelCustomTitle.swift"; sourceTree = "<group>"; };
 		C3744E020000000000000001 /* Workspace+PanelLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Workspace+PanelLifecycle.swift"; sourceTree = "<group>"; };
 		29D51D04837340F896573F0B /* Workspace+PanelTitleOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Workspace+PanelTitleOwnership.swift"; sourceTree = "<group>"; };
@@ -7825,6 +7847,7 @@
 		087C454FFF74443AB06942C3 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				04E8619DEA79D377705711FF /* omg-canvas */,
 				C0A714100000000000000001 /* ComputerUseHelperIcon.icns */,
 				A11CE0050000000000000001 /* LICENSE */,
 				B2E7294509CC42FE9191870E /* xterm-ghostty */,
@@ -8402,6 +8425,7 @@
 		A5001041 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				80B5B81E6C5976840F0AE32D /* OMGCanvas */,
 				986900010000000000000002 /* AppDelegate+BrowserActionRouting.swift */,
 				986900080000000000000002 /* BrowserAction.swift */,
 				986900020000000000000002 /* BrowserActionDispatcher.swift */,
@@ -10598,6 +10622,7 @@
 		F1000003A1B2C3D4E5F60718 /* cmuxTests */ = {
 			isa = PBXGroup;
 			children = (
+				711A07D616098139479AE4E8 /* OMGCanvasBridgeTests.swift */,
 				B6F143F6E02543F3899F1E01 /* CodexAutoresumeChainTests.swift */,
 				A54730000000000000000001 /* AntigravityHookSessionSnapshotRestoreTests.swift */,
 				A54730000000000000000003 /* RestoredStartupInputResendTests.swift */,
@@ -11681,6 +11706,22 @@
 			path = TunnelExtension;
 			sourceTree = "<group>";
 		};
+		80B5B81E6C5976840F0AE32D /* OMGCanvas */ = {
+			isa = PBXGroup;
+			children = (
+				6465B83FD30FE835525FF459 /* OMGCanvasBridgeRequest.swift */,
+				5D83389464F18D0140EF774D /* OMGCanvasCoordinator.swift */,
+				7532042AFCD02B078CDBCFC3 /* OMGCanvasGraph.swift */,
+				C62E406E86C95DD753412DC5 /* OMGCanvasHostView.swift */,
+				A722EF1D1187E8E8508590C7 /* OMGCanvasRuntimeResolver.swift */,
+				6B21D674A415CBF49178B8CC /* OMGCanvasSnapshot.swift */,
+				56A40DEEE9AE0202B78CC367 /* OMGCanvasState.swift */,
+				A85C5A65AC13408B34F06B17 /* OMGCanvasView.swift */,
+				DF2DE9BDD0089DFE9334F9F2 /* Workspace+OMGCanvas.swift */,
+			);
+			path = OMGCanvas;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -12056,6 +12097,7 @@
 				A11CE0060000000000000001 /* LICENSE in Resources */,
 				DA7A10CA710E000000000003 /* Localizable.xcstrings in Resources */,
 				A9D9000000000000000F0017 /* markdown-viewer in Resources */,
+				8C3EE7C3494254D9137CAFB4 /* omg-canvas in Resources */,
 				FEED0000000000000000F007 /* opencode-plugin.js in Resources */,
 				A5002000 /* THIRD_PARTY_LICENSES.md in Resources */,
 				84E00D47E4584162AE53BC8D /* xterm-ghostty in Resources */,
@@ -13609,6 +13651,14 @@
 				2A692BD3A1A8A856F0AC1263 /* NSView+WindowPointHitTest.swift in Sources */,
 				D36090020000000000000001 /* NSWindow+CmuxPeerWindow.swift in Sources */,
 				7A0CE1000000000000000714 /* NWConnection+Async.swift in Sources */,
+				B79C546BDD410CCE29575E83 /* OMGCanvasBridgeRequest.swift in Sources */,
+				54399EF29435C50B1A05E847 /* OMGCanvasCoordinator.swift in Sources */,
+				5287A07E38053FA45762511A /* OMGCanvasGraph.swift in Sources */,
+				E1078F6DCA540E6ACAE7005A /* OMGCanvasHostView.swift in Sources */,
+				303FA70A3D48F95D485CD58B /* OMGCanvasRuntimeResolver.swift in Sources */,
+				9F406A5F4FBBBCCB440F268A /* OMGCanvasSnapshot.swift in Sources */,
+				B17AC27367C4E490EB8A97E8 /* OMGCanvasState.swift in Sources */,
+				F6A856D1E4D0DFB4A90FA0AC /* OMGCanvasView.swift in Sources */,
 				C67540090000000000000001 /* OmnibarAddressButtonStyle.swift in Sources */,
 				A5001670 /* OneShotTerminalLauncherStore.swift in Sources */,
 				A9F200000000000000000017 /* OpenCodeEventStreamParser.swift in Sources */,
@@ -14576,6 +14626,7 @@
 				C0DE1A050000000000000001 /* Workspace+LayoutCapture.swift in Sources */,
 				9504A0010000000000000001 /* Workspace+MovingTabSplit.swift in Sources */,
 				8B45A4329C234E6FB261E635 /* Workspace+NotificationsPane.swift in Sources */,
+				B2BBAD19212F5488FA163CCC /* Workspace+OMGCanvas.swift in Sources */,
 				1828BDC4C9B442F8A327FBFA /* Workspace+PanelCustomTitle.swift in Sources */,
 				C3744E010000000000000001 /* Workspace+PanelLifecycle.swift in Sources */,
 				6E105774324C4357B85DA653 /* Workspace+PanelTitleOwnership.swift in Sources */,
@@ -15599,6 +15650,7 @@
 				4E5F60720000000000000001 /* NotificationSoundSettingsTests.swift in Sources */,
 				645645000000000000000002 /* NumberedShortcutSwapTests.swift in Sources */,
 				0A1107110000000000000001 /* OllamaAgentDetectionTests.swift in Sources */,
+				65A55F6D2FC46BD8A7E379BB /* OMGCanvasBridgeTests.swift in Sources */,
 				4378399A7C0245EF8186F306 /* OmnibarAndToolsTests.swift in Sources */,
 				9637C6D3170F4BE1A7EF6243 /* OmnibarSubmitDecisionTests.swift in Sources */,
 				0A0F00550000000000000001 /* OmpSupportTests.swift in Sources */,

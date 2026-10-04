@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>OMG</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="canvas" tabindex="0">
+    <div id="world"><svg id="edges" aria-hidden="true"></svg><div id="nodes"></div></div>
+    <section id="empty" class="empty-state" hidden>
+      <div class="empty-mark" aria-hidden="true"><span></span><i></i><span></span></div>
+      <span class="eyebrow" data-i18n="workspace"></span>
+      <h1 data-i18n="emptyTitle"></h1><p data-i18n="emptyBody"></p>
+      <button id="empty-create" class="primary" data-i18n="newSession"></button>
+    </section>
+  </main>
+  <header id="toolbar" class="toolbar floating">
+    <div class="brand"><span class="brand-mark">omg</span><span class="brand-divider"></span><span id="workspace-title" data-i18n="canvas"></span></div>
+    <button id="create-button" class="primary"><span class="plus" aria-hidden="true">+</span><span data-i18n="newSession"></span></button>
+  </header>
+  <aside class="canvas-status floating" role="status"><span id="connection-dot" class="status-dot"></span><span id="connection-label" data-i18n="connecting"></span><span class="status-divider"></span><span id="node-count"></span></aside>
+  <div id="connection-error" class="connection-error floating" hidden><span></span><button id="retry-button" class="text-button" data-i18n="retry"></button></div>
+  <footer class="canvas-footer"><span class="gesture-hint" data-i18n="gestures"></span></footer>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <div id="node-menu" class="node-menu floating" hidden><button id="menu-link" data-i18n="connectSession"></button></div>
+  <dialog id="create-dialog" class="form-dialog" aria-labelledby="create-title"><form id="create-form">
+    <header class="dialog-header"><div><span class="eyebrow" data-i18n="session"></span><h2 id="create-title" data-i18n="createTitle"></h2></div><button type="button" class="icon-button" data-close="create-dialog" data-i18n-label="close">×</button></header>
+    <p id="create-context" class="dialog-description" data-i18n="createBody"></p>
+    <label for="session-title" data-i18n="name"></label><input id="session-title" maxlength="120" autocomplete="off" required>
+    <label for="session-runtime" data-i18n="runtime"></label><select id="session-runtime" required></select>
+    <p id="runtime-help" class="field-hint"></p>
+    <p id="create-error" class="form-error" role="alert" hidden></p>
+    <footer class="dialog-actions"><button type="button" class="secondary" data-close="create-dialog" data-i18n="cancel"></button><button id="create-submit" type="submit" class="primary" data-i18n="createSession"></button></footer>
+  </form></dialog>
+  <dialog id="link-dialog" class="form-dialog" aria-labelledby="link-title"><form id="link-form">
+    <header class="dialog-header"><div><span class="eyebrow" data-i18n="relationship"></span><h2 id="link-title" data-i18n="linkTitle"></h2></div><button type="button" class="icon-button" data-close="link-dialog" data-i18n-label="close">×</button></header>
+    <p id="link-context" class="dialog-description"></p><label for="link-target" data-i18n="linkTo"></label><select id="link-target" required></select>
+    <p class="field-hint" data-i18n="linkBody"></p><p id="link-error" class="form-error" role="alert" hidden></p>
+    <footer class="dialog-actions"><button type="button" class="secondary" data-close="link-dialog" data-i18n="cancel"></button><button id="link-submit" type="submit" class="primary" data-i18n="addConnection"></button></footer>
+  </form></dialog>
+  <script src="messages.js"></script><script src="bridge.js"></script><script src="app.js"></script>
+</body>
+</html>
