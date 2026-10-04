@@ -22,7 +22,7 @@ async function canvas(t) {
       if (request.method !== 'canvas.snapshot') throw new Error('Unexpected mutation during canvas startup');
       return {ok: true, value: snapshot};
     }}}};
-  }, fixture.beforeCreateSnapshot);
+  }, {...fixture.beforeCreateSnapshot, terminalOpen: false, chatOpen: false});
   await page.goto(pathToFileURL(path.join(resources, 'index.html')).href);
   // Snapshot transport and its render callback finish before the next browser frame.
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
